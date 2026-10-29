@@ -9,12 +9,21 @@
 <body>
 <main>
     <img src="/assets/img/logo.png" alt="Dungeons & Doodles" id="logo">
+    <div class="brush-controls">
+        <button class="tool" id="draw-tool" type="button">
+            <img src="/assets/svg/brush.svg" alt="Brush" class="icon">
+        </button>
+        <button class="tool" id="erase-tool" type="button">
+            <img src="/assets/svg/eraser.svg" alt="Eraser" class="icon">
+        </button>
+        <input id="brush-size" type="range" min="2" max="30" step="1" value="6">
+    </div>
     <div class="canvas-border">
         <canvas id="canvas" width="200" height="200"></canvas>
     </div>
     <div class="buttons">
-        <button class="button" id="clear">CLEAR</button>
-        <button class="button" id="send">SEND</button>
+        <button class="button" id="clear" type="button">CLEAR</button>
+        <button class="button" id="send" type="button">SEND</button>
     </div>
     <p id="status">Connecting…</p>
 </main>

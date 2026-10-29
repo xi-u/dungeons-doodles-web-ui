@@ -7,18 +7,52 @@ const webToken = params.get("t");
 const canvas = document.querySelector("#canvas");
 const drawingContext = canvas.getContext("2d", {alpha: true});
 const statusEl = document.querySelector("#status");
+const brushSizeInput = document.querySelector("#brush-size");
+const brushSizeValue = document.querySelector("#brush-size-value");
+const drawToolButton = document.querySelector("#draw-tool");
+const eraseToolButton = document.querySelector("#erase-tool");
+
+function setTool(tool) {
+    const currentTool = tool === "erase" ? "erase" : "draw";
+    drawingContext.globalCompositeOperation = currentTool === "erase" ? "destination-out" : "source-over";
+    drawingContext.strokeStyle = currentTool === "erase" ? "rgba(0,0,0,1)" : "#000000";
+    drawToolButton.classList.toggle("active", currentTool === "draw");
+    eraseToolButton.classList.toggle("active", currentTool === "erase");
+}
 
 function resetCanvas() {
+    drawingContext.save();
+    drawingContext.setTransform(1, 0, 0, 1, 0, 0);
     drawingContext.clearRect(0, 0, canvas.width, canvas.height);
+    drawingContext.restore();
+    drawingContext.globalCompositeOperation = "source-over";
     drawingContext.strokeStyle = "#000000";
 }
 
 // Set up the canvas for drawing
 resetCanvas();
-drawingContext.lineWidth = 6;
+drawingContext.lineWidth = Number(brushSizeInput.value);
 drawingContext.lineCap = "round";
 drawingContext.lineJoin = "round";
 let drawing = false;
+let currentTool = "draw";
+
+function updateBrushSize() {
+    drawingContext.lineWidth = Number(brushSizeInput.value);
+    brushSizeValue.textContent = brushSizeInput.value;
+}
+
+brushSizeInput.addEventListener("input", updateBrushSize);
+drawToolButton.addEventListener("click", () => {
+    currentTool = "draw";
+    setTool(currentTool);
+});
+
+eraseToolButton.addEventListener("click", () => {
+    currentTool = "erase";
+    setTool(currentTool);
+});
+setTool(currentTool);
 
 
 //
@@ -34,6 +68,7 @@ function point(e) {
 canvas.addEventListener("pointerdown", e => {
     drawing = true;
     canvas.setPointerCapture(e.pointerId);
+    setTool(currentTool);
     const p = point(e);
     drawingContext.beginPath();
     drawingContext.moveTo(p.x, p.y);
@@ -52,6 +87,7 @@ canvas.addEventListener("pointerup", () => drawing = false);
 canvas.addEventListener("pointercancel", () => drawing = false);
 document.querySelector("#clear").onclick = () => {
     resetCanvas();
+    setTool(currentTool);
 };
 
 
