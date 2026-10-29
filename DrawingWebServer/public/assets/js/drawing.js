@@ -1,119 +1,147 @@
 // Get the session ID and web token from the URL parameters
-const params = new URLSearchParams(location.search);
+const params = new URLSearchParams(window.location.search);
 const sessionId = params.get("s");
 const webToken = params.get("t");
 
 // Get the UI elements and set up the canvas for drawing
 const canvas = document.querySelector("#canvas");
-const drawingContext = canvas.getContext("2d", {alpha: true});
+const ctx = canvas.getContext("2d", {alpha: true});
 const statusEl = document.querySelector("#status");
 const brushSizeInput = document.querySelector("#brush-size");
-const brushSizeValue = document.querySelector("#brush-size-value");
 const drawToolButton = document.querySelector("#draw-tool");
 const eraseToolButton = document.querySelector("#erase-tool");
+const clearButton = document.querySelector("#clear");
+const sendButton = document.querySelector("#send");
 
+// Define the initial state of the drawing application
+const state = {
+    drawing: false,
+    tool: "draw",
+};
+
+// Set the status message in the UI
+function setStatus(message) {
+    statusEl.textContent = message;
+}
+
+// Set the current drawing tool (draw or erase) and update the canvas context and UI accordingly
 function setTool(tool) {
     const currentTool = tool === "erase" ? "erase" : "draw";
-    drawingContext.globalCompositeOperation = currentTool === "erase" ? "destination-out" : "source-over";
-    drawingContext.strokeStyle = currentTool === "erase" ? "rgba(0,0,0,1)" : "#000000";
+    state.tool = currentTool;
+
+    ctx.globalCompositeOperation = currentTool === "erase" ? "destination-out" : "source-over";
+    ctx.strokeStyle = currentTool === "erase" ? "rgba(0, 0, 0, 1)" : "#000000";
+
     drawToolButton.classList.toggle("active", currentTool === "draw");
     eraseToolButton.classList.toggle("active", currentTool === "erase");
 }
 
+// Reset the canvas to its initial state
 function resetCanvas() {
-    drawingContext.save();
-    drawingContext.setTransform(1, 0, 0, 1, 0, 0);
-    drawingContext.clearRect(0, 0, canvas.width, canvas.height);
-    drawingContext.restore();
-    drawingContext.globalCompositeOperation = "source-over";
-    drawingContext.strokeStyle = "#000000";
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+
+    ctx.globalCompositeOperation = "source-over";
+    ctx.strokeStyle = "#000000";
 }
 
-// Set up the canvas for drawing
-resetCanvas();
-drawingContext.lineWidth = Number(brushSizeInput.value);
-drawingContext.lineCap = "round";
-drawingContext.lineJoin = "round";
-let drawing = false;
-let currentTool = "draw";
-
+// Update the brush size based on the input value and update the UI accordingly
 function updateBrushSize() {
-    drawingContext.lineWidth = Number(brushSizeInput.value);
-    brushSizeValue.textContent = brushSizeInput.value;
+    const size = Number(brushSizeInput.value);
+    ctx.lineWidth = size;
 }
 
-brushSizeInput.addEventListener("input", updateBrushSize);
-drawToolButton.addEventListener("click", () => {
-    currentTool = "draw";
-    setTool(currentTool);
-});
+// Get the canvas coordinates of a pointer event, scaled to the canvas size
+function getCanvasPoint(event) {
+    const rect = canvas.getBoundingClientRect();
 
-eraseToolButton.addEventListener("click", () => {
-    currentTool = "erase";
-    setTool(currentTool);
-});
-setTool(currentTool);
-
-
-//
-// Handle pointer events for drawing
-//
-function point(e) {
-    const r = canvas.getBoundingClientRect();
     return {
-        x: (e.clientX - r.left) * 200 / r.width, y: (e.clientY - r.top) * 200 / r.height
+        x: ((event.clientX - rect.left) * 200) / rect.width,
+        y: ((event.clientY - rect.top) * 200) / rect.height,
     };
 }
 
-canvas.addEventListener("pointerdown", e => {
-    drawing = true;
-    canvas.setPointerCapture(e.pointerId);
-    setTool(currentTool);
-    const p = point(e);
-    drawingContext.beginPath();
-    drawingContext.moveTo(p.x, p.y);
-    drawingContext.lineTo(p.x + .01, p.y + .01);
-    drawingContext.stroke();
-});
-
-canvas.addEventListener("pointermove", e => {
-    if (!drawing) return;
-    const p = point(e);
-    drawingContext.lineTo(p.x, p.y);
-    drawingContext.stroke();
-});
-
-canvas.addEventListener("pointerup", () => drawing = false);
-canvas.addEventListener("pointercancel", () => drawing = false);
-document.querySelector("#clear").onclick = () => {
+// Set up the canvas for drawing, including resetting it, setting the line cap and join styles, updating the brush size,
+// and setting the initial tool
+function setupCanvas() {
     resetCanvas();
-    setTool(currentTool);
-};
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    updateBrushSize();
+    setTool(state.tool);
+}
 
+/**
+ * Event listeners for the drawing application, including brush size changes, tool selection, canvas interactions,
+ * and sending the drawing to the server.
+ */
+brushSizeInput.addEventListener("input", updateBrushSize);
+drawToolButton.addEventListener("click", () => setTool("draw"));
+eraseToolButton.addEventListener("click", () => setTool("erase"));
+clearButton.addEventListener("click", () => {
+    resetCanvas();
+    setTool(state.tool);
+});
 
-//
-// Socket.IO client code to connect to the server and handle drawing submission
-//
+canvas.addEventListener("pointerdown", event => {
+    state.drawing = true;
+    canvas.setPointerCapture(event.pointerId);
+    setTool(state.tool);
+
+    const point = getCanvasPoint(event);
+    ctx.beginPath();
+    ctx.moveTo(point.x, point.y);
+    ctx.lineTo(point.x + 0.01, point.y + 0.01);
+    ctx.stroke();
+});
+
+canvas.addEventListener("pointermove", event => {
+    if (!state.drawing) {
+        return;
+    }
+
+    const point = getCanvasPoint(event);
+    ctx.lineTo(point.x, point.y);
+    ctx.stroke();
+});
+
+canvas.addEventListener("pointerup", () => {
+    state.drawing = false;
+});
+
+canvas.addEventListener("pointercancel", () => {
+    state.drawing = false;
+});
+
+setupCanvas();
+
+/**
+ * Socket.IO client code to connect to the server and handle events for joining a session and submitting drawings.
+ */
 const socket = io({transports: ["websocket", "polling"]});
 
 socket.on("connect", () => {
     if (!sessionId || !webToken) {
-        statusEl.textContent = "QR code is invalid. Scan again.";
+        setStatus("QR code is invalid. Scan again.");
         return;
     }
 
     socket.emit("phone:join", {sessionId, webToken}, result => {
-        statusEl.textContent = result.ok ? "Connected to your game" : result.error;
+        setStatus(result.ok ? "Connected to your game" : result.error);
     });
 });
 
-socket.on("disconnect", () => statusEl.textContent = "Connection lost. Reconnecting…");
+socket.on("disconnect", () => {
+    setStatus("Connection lost. Reconnecting…");
+});
 
-document.querySelector("#send").onclick = () => {
+sendButton.addEventListener("click", () => {
     const png = canvas.toDataURL("image/png");
-    statusEl.textContent = "Sending…";
+    setStatus("Sending…");
 
     socket.emit("drawing:submit", {png}, result => {
-        statusEl.textContent = result.ok ? "Sent to the game" : result.error;
+        setStatus(result.ok ? "Sent to the game" : result.error);
     });
-};
+});
