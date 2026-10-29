@@ -130,6 +130,9 @@ io.on("connection", socket => {
             return ack({ok: false, error: "Unity game is offline"});
         }
 
+        // Extract the base64-encoded PNG data from the data URL
+        const b64 = data.png.slice("data:image/png;base64,".length);
+
         // Emit the "drawing:received" event to the Unity game with the PNG data and dimensions
         game.emit("drawing:received", {pngBase64: b64, width: 200, height: 200});
 
