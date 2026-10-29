@@ -13,8 +13,10 @@ const io = new Server(server, {maxHttpBufferSize: 1e6});
 app.use(express.static("public"));
 
 // Define the port and public base URL
-const PORT = 3000
+const PORT = 3000;
 const PUBLIC_BASE_URL = `http://localhost:${PORT}`; // TODO: change this to online URL when deploying
+const SESSION_TTL_MS = 30 * 60 * 1000;
+const DRAWING_SIZE = {width: 200, height: 200};
 
 // A session store to keep track of active sessions.
 // sessionId -> {
@@ -26,8 +28,9 @@ const PUBLIC_BASE_URL = `http://localhost:${PORT}`; // TODO: change this to onli
 // }
 const sessions = new Map();
 const hash = value => crypto.createHash("sha256").update(value).digest("hex"); // SHA-256 hash function
-const token = () => crypto.randomBytes(32).toString("base64url");// Generate a random token
-const sessionId = () => crypto.randomBytes(9).toString("base64url");// Generate a random session ID
+const token = () => crypto.randomBytes(32).toString("base64url"); // Generate a random token
+const sessionId = () => crypto.randomBytes(9).toString("base64url"); // Generate a random session ID
+
 // Timing-safe comparison function to prevent timing attacks. used to compare the web token hashes.
 const timingSafeEqual = (a, b) => {
     const x = Buffer.from(a || "");
@@ -35,6 +38,34 @@ const timingSafeEqual = (a, b) => {
     return x.length === y.length && crypto.timingSafeEqual(x, y);
 };
 
+function getSession(id) {
+    if (!id) {
+        return null;
+    }
+
+    const session = sessions.get(id);
+    if (!session) {
+        return null;
+    }
+
+    if (session.expiresAt < Date.now()) {
+        sessions.delete(id);
+        return null;
+    }
+
+    return session;
+}
+
+function clearSessionPhone(session) {
+    if (!session || !session.phoneSocketId) {
+        return;
+    }
+
+    const phoneSocket = io.sockets.sockets.get(session.phoneSocketId);
+    if (phoneSocket) {
+        phoneSocket.disconnect(true);
+    }
+}
 
 //
 // Socket.IO event handlers for managing sessions and drawing submissions
@@ -45,17 +76,9 @@ const timingSafeEqual = (a, b) => {
  */
 io.on("connection", socket => {
     console.log("Socket.IO client connected:", socket.id);
-});
 
-/**
- * Handle a new Socket.IO connection.
- * This function sets up event listeners for the "game:register", "phone:join", and "drawing:submit" events.
- * It also handles disconnections and cleans up expired sessions.
- */
-io.on("connection", socket => {
     // Listens for the "game:register" event from the Unity game client
-    socket.on("game:register", (data, ack = () => {
-    }) => {
+    socket.on("game:register", (data, ack = () => {}) => {
         if (!data || typeof data.gameToken !== "string" || data.gameToken.length < 32) {
             return ack({ok: false, error: "Invalid game token"});
         }
@@ -63,11 +86,12 @@ io.on("connection", socket => {
         // Generate a new session ID and web token, and store the session data
         const id = sessionId();
         const webToken = token();
+
         sessions.set(id, {
             gameSocketId: socket.id,
             gameHash: hash(data.gameToken),
             webHash: hash(webToken),
-            expiresAt: Date.now() + 30 * 60 * 1000,
+            expiresAt: Date.now() + SESSION_TTL_MS,
             phoneSocketId: null
         });
 
@@ -83,23 +107,19 @@ io.on("connection", socket => {
     });
 
     // Listens for the "phone:join" event from the phone client
-    socket.on("phone:join", (data, ack = () => {
-    }) => {
-        // Find the session data for the given session ID and
-        const s = data && sessions.get(data.sessionId);
+    socket.on("phone:join", (data, ack = () => {}) => {
+        const session = getSession(data && data.sessionId);
 
         // Validate the session and web token
-        if (!s || s.expiresAt < Date.now() || !timingSafeEqual(s.webHash, hash(data.webToken))) {
+        if (!session || !timingSafeEqual(session.webHash, hash(data?.webToken ?? ""))) {
             return ack({ok: false, error: "This QR code has expired. Scan a new code."});
         }
 
         // If there is already a phone connected to this session, disconnect it
-        if (s.phoneSocketId && s.phoneSocketId !== socket.id) {
-            io.sockets.sockets.get(s.phoneSocketId)?.disconnect(true);
-        }
+        clearSessionPhone(session);
 
         // Update the session data with the new phone socket ID and store the session ID in the socket data
-        s.phoneSocketId = socket.id;
+        session.phoneSocketId = socket.id;
         socket.data.phoneSessionId = data.sessionId;
 
         // Acknowledge the successful connection to the phone client
@@ -107,14 +127,13 @@ io.on("connection", socket => {
     });
 
     // Listens for the "drawing:submit" event from the phone client
-    socket.on("drawing:submit", (data, ack = () => {
-    }) => {
+    socket.on("drawing:submit", (data, ack = () => {}) => {
         // Validate the session and phone socket ID
         const id = socket.data.phoneSessionId;
-        const s = id && sessions.get(id);
+        const session = getSession(id);
 
         // If the session is invalid or the phone socket ID does not match, return an error
-        if (!s || s.phoneSocketId !== socket.id) {
+        if (!session || session.phoneSocketId !== socket.id) {
             return ack({ok: false, error: "Not connected"});
         }
 
@@ -124,17 +143,17 @@ io.on("connection", socket => {
         }
 
         // Find the Unity game socket
-        const game = io.sockets.sockets.get(s.gameSocketId);
+        const game = io.sockets.sockets.get(session.gameSocketId);
         if (!game) {
             sessions.delete(id);
             return ack({ok: false, error: "Unity game is offline"});
         }
 
         // Extract the base64-encoded PNG data from the data URL
-        const b64 = data.png.slice("data:image/png;base64,".length);
+        const pngBase64 = data.png.slice("data:image/png;base64,".length);
 
         // Emit the "drawing:received" event to the Unity game with the PNG data and dimensions
-        game.emit("drawing:received", {pngBase64: b64, width: 200, height: 200});
+        game.emit("drawing:received", {pngBase64, width: DRAWING_SIZE.width, height: DRAWING_SIZE.height});
 
         // Acknowledge the successful submission to the phone client
         ack({ok: true});
@@ -142,21 +161,30 @@ io.on("connection", socket => {
 
     socket.on("disconnect", () => {
         // Clean up the session data when a socket disconnects
-        const id = socket.data.gameSessionId;
-        if (id) {
-            sessions.delete(id);
+        const gameSessionId = socket.data.gameSessionId;
+        if (gameSessionId) {
+            const session = sessions.get(gameSessionId);
+            if (session && session.gameSocketId === socket.id) {
+                sessions.delete(gameSessionId);
+            }
         }
 
         // Clean up the phone socket ID if the disconnected socket was a phone
-        const phoneId = socket.data.phoneSessionId;
-        if (phoneId && sessions.get(phoneId)?.phoneSocketId === socket.id) {
-            sessions.get(phoneId).phoneSocketId = null;
+        const phoneSessionId = socket.data.phoneSessionId;
+        const phoneSession = phoneSessionId && getSession(phoneSessionId);
+        if (phoneSession && phoneSession.phoneSocketId === socket.id) {
+            phoneSession.phoneSocketId = null;
         }
     });
 });
 
 // Periodically clean up expired sessions every 60 seconds
 setInterval(() => {
-    for (const [id, s] of sessions) if (s.expiresAt < Date.now()) sessions.delete(id);
+    for (const [id, session] of sessions) {
+        if (session.expiresAt < Date.now()) {
+            sessions.delete(id);
+        }
+    }
 }, 60_000).unref();
+
 server.listen(PORT, "0.0.0.0", () => console.log(`Drawing bridge listening on ${PORT}`));
