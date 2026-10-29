@@ -1,0 +1,87 @@
+* {
+    box-sizing: border-box
+}
+
+@font-face {
+    font-family: "InkFree";
+    src: url("/assets/fonts/ink-free/Inkfree.ttf") format("truetype");
+}
+
+@font-face {
+    font-family: "Playfair";
+    src: url("/assets/fonts/playfair-display/PlayfairDisplay-Regular.ttf") format("truetype");
+}
+
+
+body {
+    margin: 0;
+    font: 16px "Ink Free";
+    background-image: url("/assets/img/background.png");
+    background-size: cover;
+    background-position: center;
+}
+
+main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+    gap: 20px;
+}
+
+p {
+    color: white;
+    font-size: 1rem;
+    font-weight: 800;
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+    margin: 0;
+}
+
+.canvas-border {
+    display: inline-block;
+    padding: 8px;
+    border-radius: 10px;
+    background: url("/assets/img/border.png") center/cover no-repeat;
+}
+
+#canvas {
+    display: block;
+    width: min(88vw, 360px);
+    height: min(88vw, 360px);
+    border-radius: 8px;
+    background: url("/assets/img/old-paper.jpg") center/cover no-repeat;
+    touch-action: none;
+}
+
+.buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+    width: min(88vw, 360px);
+}
+
+button {
+    flex: 1;
+    border-radius: 8px;
+    border: none;
+    padding: 20px 12px;
+    font-size: 1rem;
+    font-family: Playfair;
+    color: white;
+    background-image: url("/assets/img/button.png");
+    background-size: cover;
+    background-repeat: no-repeat;
+    transition: all 0.2s ease-in-out;
+}
+
+button:hover {
+    cursor: pointer;
+    filter: brightness(1.5);
+    transform: scale(1.05);
+}
+
+#logo {
+    width: min(50vw, 300px);
+}

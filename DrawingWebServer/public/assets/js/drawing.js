@@ -5,13 +5,16 @@ const webToken = params.get("t");
 
 // Get the UI elements and set up the canvas for drawing
 const canvas = document.querySelector("#canvas");
-const drawingContext = canvas.getContext("2d", {alpha: false});
+const drawingContext = canvas.getContext("2d", {alpha: true});
 const statusEl = document.querySelector("#status");
 
+function resetCanvas() {
+    drawingContext.clearRect(0, 0, canvas.width, canvas.height);
+    drawingContext.strokeStyle = "#000000";
+}
+
 // Set up the canvas for drawing
-drawingContext.fillStyle = "#ffffff";
-drawingContext.fillRect(0, 0, 200, 200);
-drawingContext.strokeStyle = "#000000";
+resetCanvas();
 drawingContext.lineWidth = 6;
 drawingContext.lineCap = "round";
 drawingContext.lineJoin = "round";
@@ -48,9 +51,7 @@ canvas.addEventListener("pointermove", e => {
 canvas.addEventListener("pointerup", () => drawing = false);
 canvas.addEventListener("pointercancel", () => drawing = false);
 document.querySelector("#clear").onclick = () => {
-    drawingContext.fillStyle = "#fff";
-    drawingContext.fillRect(0, 0, 200, 200);
-    drawingContext.strokeStyle = "#000000";
+    resetCanvas();
 };
 
 
