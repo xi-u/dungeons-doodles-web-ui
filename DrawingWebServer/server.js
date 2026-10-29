@@ -123,12 +123,6 @@ io.on("connection", socket => {
             return ack({ok: false, error: "Expected a PNG image"});
         }
 
-        // Extract the base64-encoded PNG data and check its size
-        const b64 = data.png.slice("data:image/png;base64,".length);
-        if (b64.length > 180000){} {
-            return ack({ok: false, error: "Image is too large"});
-        }
-
         // Find the Unity game socket
         const game = io.sockets.sockets.get(s.gameSocketId);
         if (!game) {
@@ -158,7 +152,7 @@ io.on("connection", socket => {
     });
 });
 
-
+// Periodically clean up expired sessions every 60 seconds
 setInterval(() => {
     for (const [id, s] of sessions) if (s.expiresAt < Date.now()) sessions.delete(id);
 }, 60_000).unref();

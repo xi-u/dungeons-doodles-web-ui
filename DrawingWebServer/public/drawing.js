@@ -37,12 +37,14 @@ canvas.addEventListener("pointerdown", e => {
     drawingContext.lineTo(p.x + .01, p.y + .01);
     drawingContext.stroke();
 });
+
 canvas.addEventListener("pointermove", e => {
     if (!drawing) return;
     const p = point(e);
     drawingContext.lineTo(p.x, p.y);
     drawingContext.stroke();
 });
+
 canvas.addEventListener("pointerup", () => drawing = false);
 canvas.addEventListener("pointercancel", () => drawing = false);
 document.querySelector("#clear").onclick = () => {
@@ -56,20 +58,24 @@ document.querySelector("#clear").onclick = () => {
 // Socket.IO client code to connect to the server and handle drawing submission
 //
 const socket = io({transports: ["websocket", "polling"]});
+
 socket.on("connect", () => {
     if (!sessionId || !webToken) {
         statusEl.textContent = "QR code is invalid. Scan again.";
         return;
     }
+
     socket.emit("phone:join", {sessionId, webToken}, result => {
         statusEl.textContent = result.ok ? "Connected to your game" : result.error;
     });
 });
 
 socket.on("disconnect", () => statusEl.textContent = "Connection lost. Reconnecting…");
+
 document.querySelector("#send").onclick = () => {
     const png = canvas.toDataURL("image/png");
     statusEl.textContent = "Sending…";
+
     socket.emit("drawing:submit", {png}, result => {
         statusEl.textContent = result.ok ? "Sent to the game" : result.error;
     });
