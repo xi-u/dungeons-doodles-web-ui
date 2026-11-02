@@ -8,7 +8,8 @@
 </head>
 <body>
 <main>
-    <img src="/assets/img/logo.png" alt="Dungeons & Doodles" id="logo">
+    <!--    <img src="/assets/img/logo.png" alt="Dungeons & Doodles" id="logo">-->
+    <p class="header">Draw something and send it to the main game!</p>
     <div class="brush-controls">
         <button class="tool" id="draw-tool" type="button">
             <img src="/assets/svg/brush.svg" alt="Brush" class="icon">
@@ -16,16 +17,23 @@
         <button class="tool" id="erase-tool" type="button">
             <img src="/assets/svg/eraser.svg" alt="Eraser" class="icon">
         </button>
-        <input id="brush-size" type="range" min="2" max="30" step="1" value="6">
+        <div>
+            <p>Brush Size</p>
+            <input id="brush-size" type="range" min="2" max="30" step="1" value="6">
+        </div>
+        <button class="tool" id="clear" type="button" title="Clear Canvas">
+            <img src="/assets/svg/bin.svg" alt="Eraser" class="icon">
+        </button>
     </div>
     <div class="canvas-border">
         <canvas id="canvas" width="200" height="200"></canvas>
     </div>
     <div class="buttons">
-        <button class="button" id="clear" type="button">CLEAR</button>
-        <button class="button" id="send" type="button">SEND</button>
+        <button class="button" id="send" type="button">SEND TO GAME</button>
     </div>
-    <p id="status">Connecting…</p>
+    <p id="status">Connecting…
+        <img src="/assets/svg/loading.svg" class="status-icon">
+    </p>
 </main>
 <script src="/socket.io/socket.io.js"></script>
 <script src="/assets/js/drawing.js"></script>
