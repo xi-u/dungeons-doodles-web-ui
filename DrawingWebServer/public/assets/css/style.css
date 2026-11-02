@@ -286,7 +286,7 @@ button {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.4);
     z-index: 20;
 }
 
@@ -298,12 +298,15 @@ button {
 
 .confirmation-dialog {
     width: min(90vw, 360px);
-    padding: 24px 20px 18px;
+    padding: 24px 20px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
     text-align: center;
     background-image: url("/assets/img/old-paper.jpg");
     background-size: cover;
-    border-radius: 10px;
+    border: 10px solid transparent;
+    border-image: url("/assets/img/border.png") 50 round;
+    border-radius: 16px;
+    overflow: hidden;
 }
 
 /* Dialog heading */
@@ -343,21 +346,18 @@ button {
     color: white;
     cursor: pointer;
     transition: transform 0.2s ease, filter 0.2s ease;
-}
-
-/* Cancel button */
-
-.dialog-button.cancel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background-image: url("/assets/img/button-long.png");
+    background-size: cover;
 }
 
 /* Confirm button */
 
 .dialog-button.confirm {
-    background-image: url("/assets/img/button-long.png");
     filter: hue-rotate(-30deg) saturate(150%) contrast(120%);
 }
-
 
 /* ========================================
     HOVER & INTERACTIONS
