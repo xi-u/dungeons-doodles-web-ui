@@ -12,6 +12,9 @@ const brushSizeInput = document.querySelector("#brush-size");
 const drawToolButton = document.querySelector("#draw-tool");
 const eraseToolButton = document.querySelector("#erase-tool");
 const clearButton = document.querySelector("#clear");
+const clearDialog = document.querySelector("#clear-dialog");
+const clearCancelButton = document.querySelector("#clear-cancel");
+const clearConfirmButton = document.querySelector("#clear-confirm");
 const sendButton = document.querySelector("#send");
 
 // Define the initial state of the drawing application
@@ -86,11 +89,32 @@ function setupCanvas() {
 brushSizeInput.addEventListener("input", updateBrushSize);
 drawToolButton.addEventListener("click", () => setTool("draw"));
 eraseToolButton.addEventListener("click", () => setTool("erase"));
-clearButton.addEventListener("click", () => {
+
+// Functions to open and close the clear canvas confirmation dialog
+function openClearDialog() {
+    clearDialog.classList.remove("hidden");
+}
+function closeClearDialog() {
+    clearDialog.classList.add("hidden");
+}
+
+// Event listeners for the clear canvas button and confirmation dialog
+clearButton.addEventListener("click", openClearDialog);
+clearCancelButton.addEventListener("click", closeClearDialog);
+clearConfirmButton.addEventListener("click", () => {
     resetCanvas();
     setTool(state.tool);
+    closeClearDialog();
 });
 
+// Close the clear canvas dialog if the user clicks outside of it
+clearDialog.addEventListener("click", event => {
+    if (event.target === clearDialog) {
+        closeClearDialog();
+    }
+});
+
+// Event listeners for pointer events on the canvas to handle drawing and erasing
 canvas.addEventListener("pointerdown", event => {
     state.drawing = true;
     canvas.setPointerCapture(event.pointerId);
@@ -121,6 +145,7 @@ canvas.addEventListener("pointercancel", () => {
     state.drawing = false;
 });
 
+// Initialize the canvas when the page loads
 setupCanvas();
 
 /**

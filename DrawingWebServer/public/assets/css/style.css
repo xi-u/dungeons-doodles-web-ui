@@ -1,6 +1,15 @@
+/* ========================================
+    RESET & GENERAL
+======================================== */
+
 * {
-    box-sizing: border-box
+    box-sizing: border-box;
 }
+
+
+/* ========================================
+    FONTS
+======================================== */
 
 @font-face {
     font-family: "InkFree";
@@ -13,9 +22,13 @@
 }
 
 
+/* ========================================
+    BODY & BACKGROUND
+======================================== */
+
 body {
     margin: 0;
-    font: 16px "Ink Free";
+    font: 16px "InkFree";
     background-image: url("/assets/img/background.png");
     background-size: cover;
     background-position: center;
@@ -30,6 +43,11 @@ body::before {
     z-index: 0;
 }
 
+
+/* ========================================
+   MAIN LAYOUT
+======================================== */
+
 main {
     position: relative;
     display: flex;
@@ -42,13 +60,30 @@ main {
     z-index: 1;
 }
 
+
+/* ========================================
+    TEXT & HEADERS
+======================================== */
+
 p {
     color: white;
     font-size: 1rem;
     font-weight: 800;
-    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000,
+    -1px 1px 0 #000, 1px 1px 0 #000;
     margin: 0;
 }
+
+.header {
+    font-size: 1.2rem;
+    text-align: center;
+    margin-bottom: 26px;
+}
+
+
+/* ========================================
+    DRAWING CANVAS
+======================================== */
 
 .canvas-border {
     display: inline-block;
@@ -66,6 +101,11 @@ p {
     touch-action: none;
 }
 
+
+/* ========================================
+    BRUSH CONTROLS
+======================================== */
+
 .brush-controls {
     display: flex;
     align-items: center;
@@ -74,7 +114,8 @@ p {
     gap: 8px;
     width: min(88vw, 370px);
     color: white;
-    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000,
+    -1px 1px 0 #000, 1px 1px 0 #000;
     font-weight: 700;
 }
 
@@ -82,6 +123,11 @@ p {
     width: 40px;
     height: 40px;
 }
+
+
+/* ========================================
+    BUTTONS
+======================================== */
 
 .buttons {
     display: flex;
@@ -101,9 +147,11 @@ button {
     background-image: url("/assets/img/button-long.png");
     background-size: contain;
     background-repeat: no-repeat;
-    transition: all 0.2s ease-in-out;
     background-color: transparent;
+    transition: all 0.2s ease-in-out;
 }
+
+/* Send button */
 
 #send {
     width: 50%;
@@ -111,11 +159,7 @@ button {
     font-size: 1.2rem;
 }
 
-button:hover {
-    cursor: pointer;
-    filter: brightness(1.5);
-    transform: scale(1.05);
-}
+/* Tool buttons */
 
 .tool {
     display: flex;
@@ -129,10 +173,21 @@ button:hover {
 }
 
 .tool.active {
-    box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.8), 0 0 0 2px rgba(0, 0, 0, 0.5);
+    box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.8),
+    0 0 0 2px rgba(0, 0, 0, 0.5);
     filter: brightness(1.2);
 }
 
+/* Clear button */
+
+/*#clear {*/
+/*    filter: hue-rotate(-30deg) saturate(150%) contrast(120%);*/
+/*}*/
+
+
+/* ========================================
+    BRUSH SIZE SLIDER
+======================================== */
 
 #brush-size {
     width: 100%;
@@ -146,6 +201,8 @@ button:hover {
     outline: none;
     cursor: pointer;
 }
+
+/* Chrome, Safari, Edge */
 
 #brush-size::-webkit-slider-thumb {
     -webkit-appearance: none;
@@ -169,6 +226,8 @@ button:hover {
     box-shadow: 0 0 8px #f5bd4f99;
 }
 
+/* Firefox */
+
 #brush-size::-moz-range-thumb {
     width: 16px;
     height: 16px;
@@ -184,24 +243,17 @@ button:hover {
     cursor: grab;
 }
 
+/* Keyboard focus */
+
 #brush-size:focus-visible {
     outline: 2px solid #ffd66b;
     outline-offset: 5px;
 }
 
-#clear {
-    filter: hue-rotate(-30deg) saturate(150%)  contrast(120%);
-}
 
-#clear:hover {
-    filter: hue-rotate(-30deg) saturate(150%)  contrast(120%) brightness(1.5);
-}
-
-.header {
-    font-size: 1.2rem;
-    text-align: center;
-    margin-bottom: 26px;
-}
+/* ========================================
+    STATUS INDICATOR
+======================================== */
 
 .status-indicator {
     display: flex;
@@ -220,3 +272,108 @@ button:hover {
     flex-shrink: 0;
     color: white;
 }
+
+
+/* ========================================
+    DIALOGS
+======================================== */
+
+/* Dialog backdrop */
+
+.dialog-backdrop {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 20;
+}
+
+.dialog-backdrop.hidden {
+    display: none;
+}
+
+/* Confirmation dialog */
+
+.confirmation-dialog {
+    width: min(90vw, 360px);
+    padding: 24px 20px 18px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    text-align: center;
+    background-image: url("/assets/img/old-paper.jpg");
+    background-size: cover;
+    border-radius: 10px;
+}
+
+/* Dialog heading */
+
+.confirmation-dialog h2 {
+    margin: 0 0 12px;
+    color: white;
+    font-size: 1.7rem;
+    font-family: Plafair, serif;
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000,
+    -1px 1px 0 #000, 1px 1px 0 #000;
+}
+
+/* Dialog text */
+
+.confirmation-dialog p {
+    margin: 0 0 18px;
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+/* Dialog buttons */
+
+.dialog-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+}
+
+.dialog-button {
+    flex: 1;
+    min-width: 120px;
+    padding: 14px 18px;
+    border-radius: 10px;
+    border: none;
+    font: 1rem "Playfair", serif;
+    color: white;
+    cursor: pointer;
+    transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+/* Cancel button */
+
+.dialog-button.cancel {
+    background-image: url("/assets/img/button-long.png");
+}
+
+/* Confirm button */
+
+.dialog-button.confirm {
+    background-image: url("/assets/img/button-long.png");
+    filter: hue-rotate(-30deg) saturate(150%) contrast(120%);
+}
+
+
+/* ========================================
+    HOVER & INTERACTIONS
+======================================== */
+
+/* General button hover */
+
+button:hover, .dialog-button:hover {
+    cursor: pointer;
+    filter: brightness(1.5);
+    transform: scale(1.05);
+}
+
+/* Clear button hover */
+
+.dialog-button.confirm:hover {
+    filter: hue-rotate(-30deg) saturate(150%) contrast(120%) brightness(1.5);
+}
+

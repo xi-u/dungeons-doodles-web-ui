@@ -8,34 +8,48 @@
 </head>
 <body>
 <main>
-    <!--    <img src="/assets/img/logo.png" alt="Dungeons & Doodles" id="logo">-->
     <p class="header">Let your creativity flow! Draw and send it to the game!</p>
+    <!--    BRUSH CONTROLS-->
     <div class="brush-controls">
-        <button class="tool" id="draw-tool" type="button">
-            <img src="/assets/svg/brush.svg" alt="Brush" class="icon">
+        <button class="tool" id="draw-tool" type="button"><img src="/assets/svg/brush.svg" alt="Brush" class="icon">
         </button>
-        <button class="tool" id="erase-tool" type="button">
-            <img src="/assets/svg/eraser.svg" alt="Eraser" class="icon">
+        <button class="tool" id="erase-tool" type="button"><img src="/assets/svg/eraser.svg" alt="Eraser" class="icon">
         </button>
         <div>
             <p>Brush Size</p>
             <input id="brush-size" type="range" min="2" max="30" step="1" value="6">
         </div>
         <button class="tool" id="clear" type="button" title="Clear Canvas">
-            <img src="/assets/svg/bin.svg" alt="Eraser" class="icon">
+        <img src="/assets/svg/bin.svg" alt="Eraser" class="icon">
         </button>
     </div>
+    <!--    CANVAS-->
     <div class="canvas-border">
         <canvas id="canvas" width="200" height="200"></canvas>
     </div>
+    <!--    SEND BUTTON-->
     <div class="buttons">
         <button class="button" id="send" type="button">SEND TO GAME</button>
     </div>
+    <!--    STATUS-->
     <p id="status" class="status-indicator">
         <span id="status-text">Connecting…</span>
         <img id="status-icon" class="status-icon" src="/assets/svg/disconnected.svg" alt="Connection status">
     </p>
 </main>
+
+<div id="clear-dialog" class="dialog-backdrop hidden" role="dialog" aria-modal="true"
+     aria-labelledby="clear-dialog-title">
+    <div class="confirmation-dialog">
+        <h2 id="clear-dialog-title">Clear canvas?</h2>
+        <p>Are you sure you want to clear the entire canvas?</p>
+        <div class="dialog-actions">
+            <button type="button" class="dialog-button cancel" id="clear-cancel">Cancel</button>
+            <button type="button" class="dialog-button confirm" id="clear-confirm">Clear</button>
+        </div>
+    </div>
+</div>
+
 <script src="/socket.io/socket.io.js"></script>
 <script src="/assets/js/drawing.js"></script>
 </body>
