@@ -6,7 +6,8 @@ const webToken = params.get("t");
 // Get the UI elements and set up the canvas for drawing
 const canvas = document.querySelector("#canvas");
 const ctx = canvas.getContext("2d", {alpha: true});
-const statusEl = document.querySelector("#status");
+const statusTextEl = document.querySelector("#status-text");
+const statusIconEl = document.querySelector("#status-icon");
 const brushSizeInput = document.querySelector("#brush-size");
 const drawToolButton = document.querySelector("#draw-tool");
 const eraseToolButton = document.querySelector("#erase-tool");
@@ -21,7 +22,12 @@ const state = {
 
 // Set the status message in the UI
 function setStatus(message) {
-    statusEl.textContent = message;
+    statusTextEl.textContent = message;
+}
+
+function setConnectionIcon(isConnected) {
+    statusIconEl.src = isConnected ? "/assets/svg/connected.svg" : "/assets/svg/disconnected.svg";
+    statusIconEl.alt = isConnected ? "Connected" : "Disconnected";
 }
 
 // Set the current drawing tool (draw or erase) and update the canvas context and UI accordingly
@@ -123,18 +129,23 @@ setupCanvas();
 const socket = io({transports: ["websocket", "polling"]});
 
 socket.on("connect", () => {
+    setConnectionIcon(true);
+
     if (!sessionId || !webToken) {
         setStatus("QR code is invalid. Scan again.");
+        setConnectionIcon(false);
         return;
     }
 
     socket.emit("phone:join", {sessionId, webToken}, result => {
-        setStatus(result.ok ? "Connected to your game" : result.error);
+        setStatus(result.ok ? "Connected" : result.error);
+        setConnectionIcon(Boolean(result.ok));
     });
 });
 
 socket.on("disconnect", () => {
-    setStatus("Connection lost. Reconnecting…");
+    setConnectionIcon(false);
+    setStatus("Connection lost");
 });
 
 sendButton.addEventListener("click", () => {
@@ -142,6 +153,6 @@ sendButton.addEventListener("click", () => {
     setStatus("Sending…");
 
     socket.emit("drawing:submit", {png}, result => {
-        setStatus(result.ok ? "Sent to the game" : result.error);
+        setStatus(result.ok ? "Sent" : result.error);
     });
 });
