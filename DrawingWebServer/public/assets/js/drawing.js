@@ -175,19 +175,7 @@ socket.on("disconnect", () => {
 });
 
 sendButton.addEventListener("click", () => {
-    const exportCanvas = document.createElement("canvas");
-    exportCanvas.width = canvas.width;
-    exportCanvas.height = canvas.height;
-
-    const exportCtx = exportCanvas.getContext("2d");
-    const pageBackground = getComputedStyle(document.body).backgroundColor;
-    const fillColor = pageBackground && pageBackground !== "rgba(0, 0, 0, 0)" ? pageBackground : "#ffffff";
-
-    exportCtx.fillStyle = fillColor;
-    exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
-    exportCtx.drawImage(canvas, 0, 0);
-
-    const png = exportCanvas.toDataURL("image/png");
+    const png = canvas.toDataURL("image/png");
     setStatus("Sending…");
 
     socket.emit("drawing:submit", {png}, result => {
