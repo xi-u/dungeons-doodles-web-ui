@@ -28,6 +28,7 @@ function setStatus(message) {
     statusTextEl.textContent = message;
 }
 
+// Update the connection icon in the UI based on the connection status
 function setConnectionIcon(isConnected) {
     statusIconEl.src = isConnected ? "/assets/svg/connected.svg" : "/assets/svg/disconnected.svg";
     statusIconEl.alt = isConnected ? "Connected" : "Disconnected";

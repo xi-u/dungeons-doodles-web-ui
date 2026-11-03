@@ -38,6 +38,7 @@ const timingSafeEqual = (a, b) => {
     return x.length === y.length && crypto.timingSafeEqual(x, y);
 };
 
+// Get a session by ID, returning null if the session does not exist or has expired
 function getSession(id) {
     if (!id) {
         return null;
@@ -56,6 +57,7 @@ function getSession(id) {
     return session;
 }
 
+// Disconnect the phone socket associated with a session, if it exists
 function clearSessionPhone(session) {
     if (!session || !session.phoneSocketId) {
         return;
