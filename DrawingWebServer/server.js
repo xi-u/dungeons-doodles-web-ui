@@ -14,7 +14,7 @@ app.use(express.static("public"));
 
 // Define the port and public base URL
 const PORT = 3000;
-const PUBLIC_BASE_URL = `http://localhost:${PORT}`; // TODO: change this to online URL when deploying
+const PUBLIC_BASE_URL = `https://dungeons-doodles-web-ui.onrender.com`; // TODO: change this to online URL when deploying
 const SESSION_TTL_MS = 30 * 60 * 1000;
 const DRAWING_SIZE = {width: 200, height: 200};
 
