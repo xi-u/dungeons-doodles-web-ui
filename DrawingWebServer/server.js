@@ -1,20 +1,51 @@
 // Libraries
-const express = require("express");
-const http = require("node:http");
-const crypto = require("node:crypto");
-const {Server} = require("socket.io");
+import express from "express";
+import http from "node:http";
+import crypto from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { Server } from "socket.io";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Initialize the Express app, HTTP server, and Socket.IO server
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {maxHttpBufferSize: 1e6});
 
-// Serve static files from the "public" directory
-app.use(express.static("public"));
+const distDir = path.join(__dirname, "dist");
+const publicDir = path.join(__dirname, "public");
+
+app.use(express.static(distDir));
+app.use(express.static(publicDir));
+
+app.get(["/", "/index.html"], (_req, res) => {
+    const indexFile = path.join(distDir, "index.html");
+    if (fs.existsSync(indexFile)) {
+        return res.sendFile(indexFile);
+    }
+
+    return res.sendFile(path.join(publicDir, "index.html"));
+});
+
+app.use((req, res, next) => {
+    if (req.path.startsWith("/socket.io")) {
+        return next();
+    }
+
+    const indexFile = path.join(distDir, "index.html");
+    if (fs.existsSync(indexFile)) {
+        return res.sendFile(indexFile);
+    }
+
+    return next();
+});
 
 // Define the port and public base URL
 const PORT = 3000;
-const PUBLIC_BASE_URL = `https://dungeons-doodles-web-ui.onrender.com`; // TODO: change this to online URL when deploying
+const PUBLIC_BASE_URL = `http://localhost:3000`; // TODO: change this to online URL when deploying
 const SESSION_TTL_MS = 30 * 60 * 1000;
 const DRAWING_SIZE = {width: 200, height: 200};
 
@@ -85,6 +116,8 @@ io.on("connection", socket => {
             return ack({ok: false, error: "Invalid game token"});
         }
 
+        console.log("Registering Unity game with token:", data.gameToken);
+
         // Generate a new session ID and web token, and store the session data
         const id = sessionId();
         const webToken = token();
@@ -106,6 +139,8 @@ io.on("connection", socket => {
             webToken,
             url: `${PUBLIC_BASE_URL}/?s=${encodeURIComponent(id)}&t=${encodeURIComponent(webToken)}`
         });
+
+        console.log("Unity game registered with session ID:", id);
     });
 
     // Listens for the "phone:join" event from the phone client
