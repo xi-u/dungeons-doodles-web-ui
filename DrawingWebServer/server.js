@@ -1,227 +1,36 @@
-// Libraries
-import express from "express";
 import http from "node:http";
-import crypto from "node:crypto";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { Server } from "socket.io";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Initialize the Express app, HTTP server, and Socket.IO server
-const app = express();
-const server = http.createServer(app);
-const io = new Server(server, {maxHttpBufferSize: 1e6});
-
-const distDir = path.join(__dirname, "dist");
-const publicDir = path.join(__dirname, "public");
-
-app.use(express.static(distDir));
-app.use(express.static(publicDir));
-
-app.get(["/", "/index.html"], (_req, res) => {
-    const indexFile = path.join(distDir, "index.html");
-    if (fs.existsSync(indexFile)) {
-        return res.sendFile(indexFile);
-    }
-
-    return res.sendFile(path.join(publicDir, "index.html"));
-});
-
-app.use((req, res, next) => {
-    if (req.path.startsWith("/socket.io")) {
-        return next();
-    }
-
-    const indexFile = path.join(distDir, "index.html");
-    if (fs.existsSync(indexFile)) {
-        return res.sendFile(indexFile);
-    }
-
-    return next();
-});
-
-// Define the port and public base URL
-const PORT = 3000;
-const PUBLIC_BASE_URL = `https://dungeons-doodles-web-ui.onrender.com`; // TODO: change this to online URL when deploying
-const SESSION_TTL_MS = 30 * 60 * 1000;
-const DRAWING_SIZE = {width: 200, height: 200};
-
-// A session store to keep track of active sessions.
-// sessionId -> {
-//  gameSocketId, -> Socket.IO socket ID of the Unity game
-//  gameHash, -> SHA-256 hash of the game token
-//  webHash, -> SHA-256 hash of the web token
-//  expiresAt, -> Timestamp when the session expires
-//  phoneSocketId -> Socket.IO socket ID of the connected phone
-// }
-const sessions = new Map();
-const hash = value => crypto.createHash("sha256").update(value).digest("hex"); // SHA-256 hash function
-const token = () => crypto.randomBytes(32).toString("base64url"); // Generate a random token
-const sessionId = () => crypto.randomBytes(9).toString("base64url"); // Generate a random session ID
-
-// Timing-safe comparison function to prevent timing attacks. used to compare the web token hashes.
-const timingSafeEqual = (a, b) => {
-    const x = Buffer.from(a || "");
-    const y = Buffer.from(b || "");
-    return x.length === y.length && crypto.timingSafeEqual(x, y);
-};
-
-// Get a session by ID, returning null if the session does not exist or has expired
-function getSession(id) {
-    if (!id) {
-        return null;
-    }
-
-    const session = sessions.get(id);
-    if (!session) {
-        return null;
-    }
-
-    if (session.expiresAt < Date.now()) {
-        sessions.delete(id);
-        return null;
-    }
-
-    return session;
-}
-
-// Disconnect the phone socket associated with a session, if it exists
-function clearSessionPhone(session) {
-    if (!session || !session.phoneSocketId) {
-        return;
-    }
-
-    const phoneSocket = io.sockets.sockets.get(session.phoneSocketId);
-    if (phoneSocket) {
-        phoneSocket.disconnect(true);
-    }
-}
-
-//
-// Socket.IO event handlers for managing sessions and drawing submissions
-//
-
 /**
- * Handle a new Socket.IO connection.
+ * This is the main entry point for the DrawingWebServer application. It sets up an Express server, integrates Socket.IO
+ * for real-time communication, and manages game and phone sessions.
+ *
+ * Server components are stored in /server, and the frontend is stored in /src
+ *
  */
-io.on("connection", socket => {
-    console.log("Socket.IO client connected:", socket.id);
 
-    // Listens for the "game:register" event from the Unity game client
-    socket.on("game:register", (data, ack = () => {}) => {
-        if (!data || typeof data.gameToken !== "string" || data.gameToken.length < 32) {
-            return ack({ok: false, error: "Invalid game token"});
-        }
+// Import the configuration and server modules
+import { createApp } from "./server/app.js";
+import { PORT } from "./server/config.js";
+import { SessionStore } from "./server/sessionStore.js";
+import { registerSocketHandlers } from "./server/socketHandlers.js";
 
-        console.log("Registering Unity game with token:", data.gameToken);
+// Create an Express app using the createApp function
+const app = createApp();
 
-        // Generate a new session ID and web token, and store the session data
-        const id = sessionId();
-        const webToken = token();
+// Create an HTTP server using the Express app
+const server = http.createServer(app);
 
-        sessions.set(id, {
-            gameSocketId: socket.id,
-            gameHash: hash(data.gameToken),
-            webHash: hash(webToken),
-            expiresAt: Date.now() + SESSION_TTL_MS,
-            phoneSocketId: null
-        });
+// Create a Socket.IO server and attach it to the HTTP server
+const io = new Server(server, { maxHttpBufferSize: 1e6 });
 
-        socket.data.gameSessionId = id;
+// Create a session store to manage game and phone sessions
+const sessionStore = new SessionStore(io);
 
-        // SEnd the session ID, web token, and URL to the Unity game client
-        ack({
-            ok: true,
-            sessionId: id,
-            webToken,
-            url: `${PUBLIC_BASE_URL}/?s=${encodeURIComponent(id)}&t=${encodeURIComponent(webToken)}`
-        });
+// Register the socket handlers for managing game and phone connections
+registerSocketHandlers(io, sessionStore);
 
-        console.log("Unity game registered with session ID:", id);
-    });
-
-    // Listens for the "phone:join" event from the phone client
-    socket.on("phone:join", (data, ack = () => {}) => {
-        const session = getSession(data && data.sessionId);
-
-        // Validate the session and web token
-        if (!session || !timingSafeEqual(session.webHash, hash(data?.webToken ?? ""))) {
-            return ack({ok: false, error: "This QR code has expired. Scan a new code."});
-        }
-
-        // If there is already a phone connected to this session, disconnect it
-        clearSessionPhone(session);
-
-        // Update the session data with the new phone socket ID and store the session ID in the socket data
-        session.phoneSocketId = socket.id;
-        socket.data.phoneSessionId = data.sessionId;
-
-        // Acknowledge the successful connection to the phone client
-        ack({ok: true});
-    });
-
-    // Listens for the "drawing:submit" event from the phone client
-    socket.on("drawing:submit", (data, ack = () => {}) => {
-        // Validate the session and phone socket ID
-        const id = socket.data.phoneSessionId;
-        const session = getSession(id);
-
-        // If the session is invalid or the phone socket ID does not match, return an error
-        if (!session || session.phoneSocketId !== socket.id) {
-            return ack({ok: false, error: "Not connected"});
-        }
-
-        // Validate the PNG image data
-        if (!data || typeof data.png !== "string" || !data.png.startsWith("data:image/png;base64,")) {
-            return ack({ok: false, error: "Expected a PNG image"});
-        }
-
-        // Find the Unity game socket
-        const game = io.sockets.sockets.get(session.gameSocketId);
-        if (!game) {
-            sessions.delete(id);
-            return ack({ok: false, error: "Unity game is offline"});
-        }
-
-        // Extract the base64-encoded PNG data from the data URL
-        const pngBase64 = data.png.slice("data:image/png;base64,".length);
-
-        // Emit the "drawing:received" event to the Unity game with the PNG data and dimensions
-        game.emit("drawing:received", {pngBase64, width: DRAWING_SIZE.width, height: DRAWING_SIZE.height});
-
-        // Acknowledge the successful submission to the phone client
-        ack({ok: true});
-    });
-
-    socket.on("disconnect", () => {
-        // Clean up the session data when a socket disconnects
-        const gameSessionId = socket.data.gameSessionId;
-        if (gameSessionId) {
-            const session = sessions.get(gameSessionId);
-            if (session && session.gameSocketId === socket.id) {
-                sessions.delete(gameSessionId);
-            }
-        }
-
-        // Clean up the phone socket ID if the disconnected socket was a phone
-        const phoneSessionId = socket.data.phoneSessionId;
-        const phoneSession = phoneSessionId && getSession(phoneSessionId);
-        if (phoneSession && phoneSession.phoneSocketId === socket.id) {
-            phoneSession.phoneSocketId = null;
-        }
-    });
+// Start the HTTP server and listen on the specified port
+server.listen(PORT, "0.0.0.0", () => {
+    console.log(`Drawing bridge listening on ${PORT}: http://localhost:${PORT}`);
 });
-
-// Periodically clean up expired sessions every 60 seconds
-setInterval(() => {
-    for (const [id, session] of sessions) {
-        if (session.expiresAt < Date.now()) {
-            sessions.delete(id);
-        }
-    }
-}, 60_000).unref();
-
-server.listen(PORT, "0.0.0.0", () => console.log(`Drawing bridge listening on ${PORT}`));
