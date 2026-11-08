@@ -12,15 +12,11 @@ import { DIST_DIR, PUBLIC_DIR, SRC_DIR } from "./config.js";
  */
 export function createApp() {
     const app = express();
-    const hasBuiltAssets = fs.existsSync(DIST_DIR) && fs.existsSync(path.join(DIST_DIR, "index.html"));
 
-    // In production, only serve the built bundle. Serving the raw src tree exposes unbundled ESM files like
-    // "import { createApp } from 'vue'" which browsers cannot resolve without a Vite dev server.
+    // Serve static files from the DIST_DIR, PUBLIC_DIR, and SRC_DIR directories
     app.use(express.static(DIST_DIR));
     app.use(express.static(PUBLIC_DIR));
-    if (!hasBuiltAssets) {
-        app.use(express.static(SRC_DIR));
-    }
+    app.use(express.static(SRC_DIR));
 
     // Helper function to resolve the index.html file from the available directories
     const resolveIndexFile = () => {
@@ -43,16 +39,9 @@ export function createApp() {
         return res.status(404).send("index.html not found");
     });
 
-    // Middleware to handle browser routes without matching a real static asset.
-    // Do not rewrite actual asset requests (for example /assets/*.js or /src/*.js), because those may be
-    // requested directly and should return 404 instead of the HTML shell.
+    // Middleware to handle requests that do not match any static files or routes
     app.use((req, res, next) => {
         if (req.path.startsWith("/socket.io")) {
-            return next();
-        }
-
-        const hasFileExtension = path.extname(req.path) !== "";
-        if (hasFileExtension) {
             return next();
         }
 
