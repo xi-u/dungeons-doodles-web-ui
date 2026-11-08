@@ -154,3 +154,21 @@ defineExpose({
     ></canvas>
   </div>
 </template>
+
+<style scoped>
+.canvas-border {
+  display: inline-block;
+  padding: 8px;
+  border-radius: 10px;
+  background: url("../assets/img/border.png") center/cover no-repeat;
+}
+
+#canvas {
+  display: block;
+  width: min(88vw, 360px);
+  height: min(88vw, 360px);
+  border-radius: 8px;
+  background: url("../assets/img/old-paper.jpg") center/cover no-repeat;
+  touch-action: none;
+}
+</style>

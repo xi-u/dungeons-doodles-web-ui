@@ -79,3 +79,57 @@ function handleClearDialogConfirm() {
       @cancel="closeClearDialog()"/>
   </main>
 </template>
+
+<style scoped>
+main {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+  gap: 10px;
+  z-index: 1;
+}
+
+.header {
+  font-size: 1.2rem;
+  text-align: center;
+  margin-bottom: 26px;
+}
+
+.buttons {
+  display: flex;
+  gap: 10px;
+  width: min(88vw, 360px);
+  flex-wrap: wrap;
+}
+
+button {
+  flex: 1;
+  border-radius: 8px;
+  border: none;
+  padding: 22px 12px;
+  font-size: 1.1rem;
+  font-family: "Playfair", serif;
+  color: white;
+  background-image: url("../assets/img/button-long.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-color: transparent;
+  transition: all 0.2s ease-in-out;
+}
+
+#send {
+  width: 50%;
+  height: 110px;
+  font-size: 1.2rem;
+}
+
+button:hover {
+  cursor: pointer;
+  filter: brightness(1.5);
+  transform: scale(1.05);
+}
+</style>

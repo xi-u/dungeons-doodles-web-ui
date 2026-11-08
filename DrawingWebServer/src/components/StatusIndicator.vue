@@ -29,3 +29,23 @@ const disconnectedIcon = new URL("../assets/svg/disconnected.svg", import.meta.u
       :alt="props.connected ? 'Connected' : 'Disconnected'"/>
   </p>
 </template>
+
+<style scoped>
+.status-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+}
+
+.status-icon {
+  width: 18px;
+  height: 18px;
+  display: inline-block;
+  flex-shrink: 0;
+  color: white;
+}
+</style>

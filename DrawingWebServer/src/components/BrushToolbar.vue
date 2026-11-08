@@ -65,3 +65,94 @@ function onBrushSizeChange(event) {
     </button>
   </div>
 </template>
+
+<style scoped>
+.brush-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: row;
+  gap: 8px;
+  width: min(88vw, 370px);
+  color: white;
+  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000,
+  -1px 1px 0 #000, 1px 1px 0 #000;
+  font-weight: 700;
+}
+
+.icon {
+  width: 40px;
+  height: 40px;
+}
+
+.tool {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-image: url("../assets/img/button-square.png");
+  background-size: cover;
+  background-color: transparent;
+  width: 70px;
+  height: 70px;
+  border-radius: 8px;
+  border: none;
+  transition: all 0.2s ease-in-out;
+}
+
+.tool.active {
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.8),
+  0 0 0 2px rgba(0, 0, 0, 0.5);
+  filter: brightness(1.2);
+}
+
+#brush-size {
+  width: 100%;
+  height: 8px;
+  margin: 12px 0;
+  appearance: none;
+  -webkit-appearance: none;
+  background: #3b2113;
+  border: 1px solid #8b5a2b;
+  border-radius: 10px;
+  outline: none;
+  cursor: pointer;
+}
+
+#brush-size::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #ffe18a, #e5a52e 60%, #a96316);
+  border: 2px solid #704015;
+  box-shadow: 0 2px 5px #0006;
+  cursor: grab;
+}
+
+#brush-size::-webkit-slider-thumb:active {
+  cursor: grabbing;
+  box-shadow: 0 0 8px #f5bd4f99;
+}
+
+#brush-size::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #ffe18a, #e5a52e 60%, #a96316);
+  border: 2px solid #704015;
+  box-shadow: 0 2px 5px #0006;
+  cursor: grab;
+}
+
+#brush-size:focus-visible {
+  outline: 2px solid #ffd66b;
+  outline-offset: 5px;
+}
+
+button:hover {
+  cursor: pointer;
+  filter: brightness(1.5);
+  transform: scale(1.05);
+}
+</style>
