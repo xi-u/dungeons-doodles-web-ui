@@ -2,7 +2,7 @@ import express from "express";
 import fs from "node:fs";
 import path from "node:path";
 
-import { DIST_DIR, PUBLIC_DIR, SRC_DIR } from "./config.js";
+import { DIST_DIR, PUBLIC_DIR, ROOT_DIR_PATH, SRC_DIR } from "./config.js";
 
 /**
  * Creates and configures an Express application for the DrawingWebServer.
@@ -22,6 +22,7 @@ export function createApp() {
     const resolveIndexFile = () => {
         const candidates = [
             path.join(DIST_DIR, "index.html"),
+            path.join(ROOT_DIR_PATH, "index.html"),
             path.join(SRC_DIR, "index.html"),
             path.join(PUBLIC_DIR, "index.html")
         ];
