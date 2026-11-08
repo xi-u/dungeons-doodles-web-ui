@@ -1,9 +1,0 @@
-{
-  "name": "dungeons-doodles-web-ui",
-  "private": true,
-  "scripts": {
-    "install:app": "npm install --prefix DrawingWebServer",
-    "build": "npm run install:app && npm --prefix DrawingWebServer run build",
-    "start": "npm --prefix DrawingWebServer run start"
-  }
-}
