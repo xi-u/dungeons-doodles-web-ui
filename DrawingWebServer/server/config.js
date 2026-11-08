@@ -10,8 +10,7 @@ const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, "..");
 
 export const PORT = Number(process.env.PORT ?? 3000);
-const renderUrl = process.env.RENDER_EXTERNAL_URL ?? process.env.RENDER_URL ?? null;
-export const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL ?? renderUrl ?? `http://localhost:${PORT}`;
+export const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL ?? "https://dungeons-doodles-web-ui.onrender.com";
 export const SESSION_TTL_MS = Number(process.env.SESSION_TTL_MS ?? 30 * 60 * 1000);
 export const DRAWING_SIZE = Object.freeze({ width: 200, height: 200 });
 export const ROOT_DIR_PATH = ROOT_DIR;
