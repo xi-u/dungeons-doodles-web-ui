@@ -14,6 +14,7 @@ import { SESSION_TTL_MS } from "./config.js";
 export const hash = value => crypto.createHash("sha256").update(value).digest("hex");
 export const token = () => crypto.randomBytes(32).toString("base64url");
 export const sessionId = () => crypto.randomBytes(9).toString("base64url");
+export const playerId = () => crypto.randomBytes(9).toString("base64url");
 
 // Timing-safe comparison function to prevent timing attacks when comparing sensitive values like tokens
 export const timingSafeEqual = (a, b) => {
@@ -58,8 +59,8 @@ export class SessionStore {
         return session;
     }
 
-    // Create a new session with a game socket ID and game token, returning the session ID, web token, and session object
-    createSession(gameSocketId, gameToken) {
+    // Create a new session for a game socket. Only the host's session accepts phone players.
+    createSession(gameSocketId, gameToken, acceptsPlayers) {
         const id = sessionId();
         const webToken = token();
         const session = {
@@ -67,28 +68,16 @@ export class SessionStore {
             gameHash: hash(gameToken),
             webHash: hash(webToken),
             expiresAt: Date.now() + SESSION_TTL_MS,
-            phoneSocketId: null
+            acceptsPlayers,
+            phoneSocketIds: new Set(),   // every phone connected to this session
+            players: new Map(),          // playerId -> { socketId, rejoinHash }; socketId is null while the phone is offline
+            replay: [],                  // the last messages to all players, sent again to a phone that comes back
+            slotsLeft: 0                 // how many new players the host still accepts (lobby:state); none until it says so
         };
 
         this.sessions.set(id, session);
 
-        return {
-            sessionId: id,
-            webToken,
-            session
-        };
-    }
-
-    // Clear the phone connection for a given session, disconnecting the phone socket if it exists
-    clearSessionPhone(session) {
-        if (!session || !session.phoneSocketId) {
-            return;
-        }
-
-        const phoneSocket = this.io?.sockets?.sockets?.get(session.phoneSocketId);
-        if (phoneSocket) {
-            phoneSocket.disconnect(true);
-        }
+        return { sessionId: id, webToken, session };
     }
 
     // Delete a session by its ID, removing it from the session store

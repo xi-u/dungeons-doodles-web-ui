@@ -17,3 +17,5 @@ export const ROOT_DIR_PATH = ROOT_DIR;
 export const SRC_DIR = path.join(ROOT_DIR, "src");
 export const DIST_DIR = path.join(ROOT_DIR, "dist");
 export const PUBLIC_DIR = path.join(ROOT_DIR, "public");
+export const MAX_PHONES_PER_SESSION = Number(process.env.MAX_PHONES_PER_SESSION ?? 8);
+export const MAX_NAME_LENGTH = 20;

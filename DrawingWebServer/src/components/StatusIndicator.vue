@@ -37,7 +37,8 @@ const disconnectedIcon = new URL("../assets/svg/disconnected.svg", import.meta.u
   justify-content: center;
   gap: 8px;
   position: absolute;
-  bottom: 10px;
+  /* Above the iPhone's home bar */
+  bottom: max(10px, env(safe-area-inset-bottom));
   left: 10px;
 }
 

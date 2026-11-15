@@ -24,18 +24,29 @@
     BODY & BACKGROUND
 ======================================== */
 
+/* The page is exactly one screen: it never scrolls, and nothing around it is white */
+html {
+    height: 100%;
+    overflow: hidden;
+    /* No rubber-band bounce when you swipe at the edge */
+    overscroll-behavior: none;
+    /* Shows wherever the background picture doesn't reach: behind the browser bars and next to the notch */
+    background: #422717;
+}
+
 body {
     margin: 0;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
     font: 16px "InkFree";
-    background-image: url("../img/background.png");
-    background-size: cover;
-    background-position: center;
 }
 
 body::before {
     content: "";
     position: fixed;
-    inset: 0;
+    /* A bit bigger than the screen: blur fades the edges, and these then fall outside the screen */
+    inset: -12px;
     background: url("../img/background.png") center/cover no-repeat;
     filter: blur(4px) brightness(0.8);
     z-index: 0;
@@ -50,3 +61,50 @@ p {
     margin: 0;
 }
 
+/* ========================================
+    SHARED GAME UI
+======================================== */
+
+/* A paper card with the wooden border, like the clear-canvas dialog */
+.paper-panel {
+    width: min(88vw, 360px);
+    padding: 24px 20px;
+    text-align: center;
+    background: url("../img/old-paper.jpg") center/cover;
+    border: 10px solid transparent;
+    border-image: url("../img/border.png") 50 round;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.paper-panel h2 {
+    margin: 0 0 12px;
+    color: white;
+    font: 1.7rem "Playfair", serif;
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000,
+    -1px 1px 0 #000, 1px 1px 0 #000;
+}
+
+/* The wooden button from the drawing page */
+.game-button {
+    width: 100%;
+    min-height: 70px;
+    padding: 18px 12px;
+    border: none;
+    border-radius: 8px;
+    font: 1.1rem "Playfair", serif;
+    color: white;
+    background: url("../img/button-long.png") center/contain no-repeat transparent;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.game-button:hover:not(:disabled) {
+    filter: brightness(1.5);
+    transform: scale(1.05);
+}
+
+.game-button:disabled {
+    filter: grayscale(0.6) brightness(0.8);
+    cursor: default;
+}

@@ -1,29 +1,30 @@
 <script setup>
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import BrushToolbar from "../components/BrushToolbar.vue";
 import ClearCanvasDialog from "../components/ClearCanvasDialog.vue";
 import DrawingCanvas from "../components/DrawingCanvas.vue";
-import StatusIndicator from "../components/StatusIndicator.vue";
-import { useDrawingSession } from "../composables/useDrawingSession";
+import { useDrawingTools } from "../composables/useDrawingTools";
 
-// This is the main view for the drawing page. It contains the brush toolbar, the drawing canvas
-// It also handles the logic for clearing the canvas and submitting the drawing to the game.
+// The drawing screen. It doesn't talk to the server: it hands the finished drawing up to GameView.
+// As a sketchpad (secondsLeft is null) it shows no countdown.
+const props = defineProps({
+  secondsLeft: {
+    type: Number,
+    default: null,
+  },
+});
+
+const emit = defineEmits(["submit"]);
 
 // Define a ref for the DrawingCanvas component to access its methods
 const drawingCanvasRef = ref(null);
 
-// Use the useDrawingSession composable to manage the drawing session state and actions
-const {
-  connected,
-  tool,
-  brushSize,
-  showClearDialog,
-  statusText,
-  updateTool,
-  openClearDialog,
-  closeClearDialog,
-  submitDrawing,
-} = useDrawingSession();
+const { tool, brushSize, showClearDialog, updateTool, openClearDialog, closeClearDialog } = useDrawingTools();
+
+const headerText = computed(() => {
+  if (props.secondsLeft === null) return "Let your creativity flow! Draw and send it to the game!";
+  return props.secondsLeft > 0 ? `Draw! ${props.secondsLeft} seconds left` : "Time's up! Send your drawing now";
+});
 
 // Handle tool change event from the BrushToolbar component
 function handleToolChange(value) {
@@ -33,11 +34,6 @@ function handleToolChange(value) {
 // Handle brush size change event from the BrushToolbar component
 function handleBrushSizeChange(value) {
   brushSize.value = value;
-}
-
-// Handle submit event from the DrawingCanvas component
-function handleSubmit(png) {
-  submitDrawing(png);
 }
 
 // Handle confirm event from the ClearCanvasDialog component
@@ -51,8 +47,8 @@ function handleClearDialogConfirm() {
 </script>
 
 <template>
-  <main>
-    <p class="header">Let your creativity flow! Draw and send it to the game!</p>
+  <section class="drawing">
+    <p class="header">{{ headerText }}</p>
 
     <BrushToolbar
       :tool="tool"
@@ -65,32 +61,25 @@ function handleClearDialogConfirm() {
       ref="drawingCanvasRef"
       :tool="tool"
       :brush-size="brushSize"
-      @submit="handleSubmit"/>
+      @submit="(png) => emit('submit', png)"/>
 
     <div class="buttons">
       <button class="button" id="send" type="button" @click="drawingCanvasRef?.submitDrawing()">SEND TO GAME</button>
     </div>
 
-    <StatusIndicator :connected="connected" :status-text="statusText" />
-
     <ClearCanvasDialog
       v-if="showClearDialog"
       @confirm="handleClearDialogConfirm"
       @cancel="closeClearDialog()"/>
-  </main>
+  </section>
 </template>
 
 <style scoped>
-main {
-  position: relative;
+.drawing {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  padding: 20px;
   gap: 10px;
-  z-index: 1;
 }
 
 .header {
