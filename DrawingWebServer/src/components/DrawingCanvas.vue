@@ -165,8 +165,9 @@ defineExpose({
 
 #canvas {
   display: block;
-  width: min(88vw, 360px);
-  height: min(88vw, 360px);
+  /* Square, and small enough on a short screen that the toolbar and the send button still fit (the page can't scroll) */
+  width: min(88vw, 360px, 100dvh - 380px);
+  height: min(88vw, 360px, 100dvh - 380px);
   border-radius: 8px;
   background: url("../assets/img/old-paper.jpg") center/cover no-repeat;
   touch-action: none;

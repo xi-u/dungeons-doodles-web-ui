@@ -1,15 +1,13 @@
 import { createRouter, createWebHistory } from "vue-router";
-import DrawingView from "../views/DrawingView.vue";
+import GameView from "../views/GameView.vue";
 
 // This file sets up the Vue Router for the application. It defines the routes and their corresponding components.
 // The router is then exported for use in the main application file (src/main.js).
-//
-
 const routes = [
   {
     path: "/",
-    name: "drawing",
-    component: DrawingView,
+    name: "game",
+    component: GameView,
   },
 ];
 
