@@ -28,6 +28,9 @@ export function useGameSession() {
     const winner = ref(-1);
     // An error the server sent back (game full, name too long…). Shown as a pop-up until the player closes it
     const alertText = ref("");
+    const customizationCatalog = ref(null);
+    const customizationSending = ref(false);
+    const playerName = ref("");
     // The base64 of the drawing this phone sent. The host sends the exact same text back in vote:open
     const ownDrawing = ref(null);
     const ownSlot = computed(() => (ownDrawing.value ? images.value.indexOf(ownDrawing.value) : -1));
@@ -85,6 +88,7 @@ export function useGameSession() {
         if (!saved) {
             return show("join", "Connected");
         }
+        playerName.value = saved.name || "";
 
         socket.emit("player:rejoin", saved, result => {
             if (!result.ok) {
@@ -93,12 +97,13 @@ export function useGameSession() {
                 return show("join", "Connected");
             }
 
-            show("waiting", "Welcome back!");
+            if (screen.value !== "customization") show("waiting", "Welcome back!");
         });
     }
 
     socket.on("disconnect", reason => {
         connected.value = false;
+        customizationSending.value = false;
 
         // The server closed this connection because the same player opened the game in another tab. Don't reconnect
         if (reason === "io server disconnect") {
@@ -107,6 +112,28 @@ export function useGameSession() {
 
         // Socket.IO reconnects by itself, and the connect handler then rejoins
         statusText.value = "Connection lost, reconnecting…";
+    });
+
+    socket.on("customization:open", catalog => {
+        customizationCatalog.value = catalog;
+        customizationSending.value = false;
+        show("customization", "Create your character");
+    });
+
+    socket.on("customization:result", ({ accepted, error }) => {
+        customizationSending.value = false;
+        if (!customizationCatalog.value) return;
+        if (!accepted) {
+            alertText.value = error || "Your character could not be saved. Please try again.";
+            return;
+        }
+        show("waiting", "Character saved! Waiting for the others");
+    });
+
+    socket.on("customization:close", () => {
+        customizationCatalog.value = null;
+        customizationSending.value = false;
+        if (screen.value === "customization") show("waiting", "Character customization has ended");
     });
 
     socket.on("drawing:open", ({ seconds }) => {
@@ -161,8 +188,20 @@ export function useGameSession() {
                 return;
             }
 
-            savePlayer({ playerId: result.playerId, rejoinToken: result.rejoinToken });
+            playerName.value = name;
+            savePlayer({ playerId: result.playerId, rejoinToken: result.rejoinToken, name });
             show("waiting", "You're in! Look at the big screen");
+        });
+    }
+
+    function submitCustomization(character) {
+        if (!connected.value || customizationSending.value) return;
+        customizationSending.value = true;
+        socket.timeout(15000).emit("customization:submit", character, (error, result) => {
+            if (error || !result?.ok) {
+                customizationSending.value = false;
+                alertText.value = result?.error || "Connection timed out. Please try again.";
+            }
         });
     }
 
@@ -223,6 +262,6 @@ export function useGameSession() {
 
     return {
         screen, connected, statusText, secondsLeft, options, images, picked, winner, ownSlot, alertText,
-        join, submitDrawing, vote, dismissAlert,
+        customizationCatalog, customizationSending, playerName, join, submitCustomization, submitDrawing, vote, dismissAlert,
     };
 }
