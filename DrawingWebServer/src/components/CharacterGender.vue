@@ -1,4 +1,7 @@
 <script setup>
+
+// A component that displays a set of character genders and allows the user to select one, along with an optional pronouns input.
+
 defineProps({
   modelValue: {type: String, default: ""},
   pronouns: {type: String, default: ""},

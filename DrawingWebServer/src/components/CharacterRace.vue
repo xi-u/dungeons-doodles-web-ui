@@ -1,6 +1,8 @@
 <script setup>
 import CharacterOptionSelector from "./CharacterOptionSelector.vue";
 
+// A component that displays a set of character races and allows the user to select one.
+
 defineProps({
   modelValue: {type: String, default: ""},
   options: {type: Array, required: true},
