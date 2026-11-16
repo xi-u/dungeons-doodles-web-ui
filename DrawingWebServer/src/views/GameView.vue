@@ -5,6 +5,7 @@ import JoinForm from "../components/JoinForm.vue";
 import DrawingView from "./DrawingView.vue";
 import VoteList from "../components/VoteList.vue";
 import MessageDialog from "../components/MessageDialog.vue";
+import CharacterCustomization from "../components/CharacterCustomization.vue";
 
 // The page a phone opens after scanning the QR code. It shows one screen at a time; useGameSession decides which
 const {
@@ -18,7 +19,11 @@ const {
   winner,
   ownSlot,
   alertText,
+  customizationCatalog,
+  customizationSending,
+  playerName,
   join,
+  submitCustomization,
   submitDrawing,
   vote,
   dismissAlert,
@@ -28,6 +33,13 @@ const {
 <template>
   <main class="game">
     <JoinForm v-if="screen === 'join'" @join="join" />
+    <CharacterCustomization
+        v-if="screen === 'customization'"
+        :catalog="customizationCatalog"
+        :sending="customizationSending"
+        :connected="connected"
+        :player-name="playerName"
+        @submit="submitCustomization"/>
     <DrawingView
         v-if="screen === 'drawing' || screen === 'sketchpad'"
         :seconds-left="screen === 'drawing' ? secondsLeft : null"
@@ -81,6 +93,14 @@ const {
   padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
   gap: 10px;
   z-index: 1;
+}
+.game:has(.customization) {
+  justify-content: flex-start;
+  overflow-y: auto;
+}
+.game:has(.customization) :deep(.status-indicator) {
+  position: static;
+  flex: none;
 }
 .winner-drawing {
   width: 100%;

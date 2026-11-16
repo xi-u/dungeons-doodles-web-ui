@@ -160,8 +160,8 @@ defineExpose({
 <style scoped>
 .canvas-border {
   display: inline-block;
-  padding: 8px;
-  border-radius: 10px;
+  padding: 7px;
+  border-radius: 9px;
   background: url("../assets/img/border.png") center/cover no-repeat;
 }
 
@@ -170,7 +170,6 @@ defineExpose({
   /* Square, and small enough on a short screen that the toolbar and the send button still fit (the page can't scroll) */
   width: min(88vw, 360px, 100dvh - 380px);
   height: min(88vw, 360px, 100dvh - 380px);
-  border-radius: 8px;
   background: url("../assets/img/old-paper.jpg") center/cover no-repeat;
   touch-action: none;
 }
