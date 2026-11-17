@@ -8,6 +8,7 @@ const playersRoom = sessionId => `players:${sessionId}`;
  * Registers the socket handlers that connect the Unity game, the phones, and the voting.
  */
 export function registerSocketHandlers(io, sessionStore) {
+    const pendingCustomizations = new Map();
     // the session of this game socket, or null if this socket isn't the registered game
     const gameSessionOf = socket => {
         const session = sessionStore.getSession(socket.data.gameSessionId);
@@ -138,6 +139,117 @@ export function registerSocketHandlers(io, sessionStore) {
             }
 
             ack({ ok: true, playerId: socket.data.playerId, rejoinToken: socket.data.rejoinToken });
+        });
+
+        // The catalog comes from Unity's active scene, not from a copy maintained by the web UI.
+        socket.on("customization:open", data => {
+            const session = gameSessionOf(socket);
+            if (!session || !Array.isArray(data?.classes) || !Array.isArray(data?.races) ||
+                !Array.isArray(data?.genders)) {
+                return;
+            }
+
+            const message = { classes: data.classes, races: data.races, genders: data.genders };
+            session.replay = [{ event: "customization:open", data: message }];
+            forgetPlayerReplays(session);
+            io.to(playersRoom(socket.data.gameSessionId)).emit("customization:open", message);
+        });
+
+        // Submission of a character from a phone is sent to Unity, which can accept or reject it.
+        socket.on("customization:submit", (data, ack = () => {}) => {
+            const session = phoneSessionOf(socket);
+            const player = session?.players.get(socket.data.playerId);
+            const catalog = session?.replay.find(item => item.event === "customization:open")?.data;
+
+            // The player must be joined, and the catalog must be open, to submit a character. A player can submit only once.
+            if (!player || player.socketId !== socket.id || !catalog) {
+                return ack({ ok: false, error: "Character customization is not available." });
+            }
+
+            // The player can submit only once, and Unity can reject it. A replayed submission is ignored, so a refresh doesn't let a player submit again.
+            if (player.customizationPending || player.replay.some(item => item.event === "customization:result" && item.data.accepted)) {
+                return ack({ ok: false, error: "Your character has already been submitted." });
+            }
+
+            // Validate the character choices and portrait. The portrait must be a base64 PNG, and the pronouns must be a string of reasonable length.
+            if (!catalog.classes.some(option => option.name === data?.className) ||
+                !catalog.races.some(option => option.name === data?.raceName) ||
+                !catalog.genders.some(option => option.name === data?.gender) ||
+                typeof data?.pronouns !== "string" || data.pronouns.length > 40 ||
+                typeof data?.portrait !== "string" || !/^data:image\/png;base64,[A-Za-z0-9+/]+={0,2}$/.test(data.portrait) ||
+                data.portrait.length > 500000) {
+                return ack({ ok: false, error: "Please check your character choices and portrait." });
+            }
+
+            // The Unity game must be connected to receive the customization.
+            if (!io.sockets.sockets.get(session.gameSocketId)) {
+                return ack({ ok: false, error: "Unity game is offline." });
+            }
+
+            // The player is now waiting for Unity to accept or reject the customization.
+            // A timeout is set in case Unity doesn't respond.
+            const requestId = token();
+            player.customizationPending = requestId;
+            const timer = setTimeout(() => {
+                pendingCustomizations.delete(requestId);
+                if (player.customizationPending !== requestId) {
+                    return;
+                }
+                player.customizationPending = null;
+                if (player.socketId) {
+                    io.to(player.socketId).emit("customization:result", {
+                        accepted: false, error: "Unity did not respond. Please try again."
+                    });
+                }
+            }, 15000);
+            timer.unref();
+
+            // Store the pending customization so that when Unity responds, we can match it to the player and session.
+            pendingCustomizations.set(requestId, { session, player, timer });
+            io.to(session.gameSocketId).emit("customization:received", {
+                requestId, playerId: socket.data.playerId, className: data.className,
+                raceName: data.raceName, gender: data.gender, pronouns: data.pronouns.trim(),
+                pngBase64: data.portrait.slice("data:image/png;base64,".length)
+            });
+            ack({ ok: true });
+        });
+
+        // Unity accepted or rejected a player's customization; tell only that phone
+        socket.on("customization:result", data => {
+            const session = gameSessionOf(socket);
+            const pending = pendingCustomizations.get(data?.requestId);
+            if (!session || !pending || pending.session !== session) {
+                return;
+            }
+            clearTimeout(pending.timer);
+            pendingCustomizations.delete(data.requestId);
+            pending.player.customizationPending = null;
+            const message = { accepted: data.accepted === true, error: data.error };
+            if (message.accepted) {
+                pending.player.replay = [{ event: "customization:result", data: message }];
+            }
+            if (pending.player.socketId) {
+                io.to(pending.player.socketId).emit("customization:result", message);
+            }
+        });
+
+        // Unity closed the customization catalog; tell every phone that joined this session
+        socket.on("customization:close", () => {
+            const session = gameSessionOf(socket);
+            if (!session || !session.replay.some(item => item.event === "customization:open")) {
+                return;
+            }
+            for (const [requestId, pending] of pendingCustomizations) {
+                if (pending.session !== session) {
+                    continue;
+                }
+                clearTimeout(pending.timer);
+                pending.player.customizationPending = null;
+                pendingCustomizations.delete(requestId);
+            }
+            session.replay = [];
+            forgetPlayerReplays(session);
+            io.to(playersRoom(socket.data.gameSessionId)).emit("customization:close");
         });
 
         // Unchanged, except that every joined phone may now send a drawing

@@ -16,7 +16,7 @@ const props = defineProps({
 });
 
 // Define the events that this component can emit to the parent component (DrawingView)
-const emit = defineEmits(["submit"]);
+const emit = defineEmits(["submit", "change"]);
 
 // Define refs for the canvas element, its 2D rendering context, and a flag to track whether the user is currently drawing
 const canvasRef = ref(null);
@@ -51,6 +51,7 @@ function resetCanvas() {
   context.restore();
   context.globalCompositeOperation = "source-over";
   context.strokeStyle = "#000000";
+  emit("change", canvas.toDataURL("image/png"));
 }
 
 // Get the canvas coordinates from a pointer event
@@ -105,6 +106,7 @@ function handlePointerMove(event) {
 // Handle the pointer up event
 function handlePointerUp() {
   drawing.value = false;
+  if (canvasRef.value) emit("change", canvasRef.value.toDataURL("image/png"));
 }
 
 // Submit the drawing by emitting the submit event with the canvas data URL
@@ -158,8 +160,8 @@ defineExpose({
 <style scoped>
 .canvas-border {
   display: inline-block;
-  padding: 8px;
-  border-radius: 10px;
+  padding: 7px;
+  border-radius: 9px;
   background: url("../assets/img/border.png") center/cover no-repeat;
 }
 
@@ -168,7 +170,6 @@ defineExpose({
   /* Square, and small enough on a short screen that the toolbar and the send button still fit (the page can't scroll) */
   width: min(88vw, 360px, 100dvh - 380px);
   height: min(88vw, 360px, 100dvh - 380px);
-  border-radius: 8px;
   background: url("../assets/img/old-paper.jpg") center/cover no-repeat;
   touch-action: none;
 }

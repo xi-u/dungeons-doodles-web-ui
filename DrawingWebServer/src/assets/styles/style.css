@@ -20,6 +20,11 @@
     src: url("../fonts/playfair-display/PlayfairDisplay-Regular.ttf") format("truetype");
 }
 
+@font-face {
+    font-family: "Playfair SemiBoldItalic";
+    src: url("../fonts/playfair-display/PlayfairDisplay-SemiBoldItalic.ttf") format("truetype");
+}
+
 /* ========================================
     BODY & BACKGROUND
 ======================================== */
@@ -73,6 +78,17 @@ p {
     background: url("../img/old-paper.jpg") center/cover;
     border: 10px solid transparent;
     border-image: url("../img/border.png") 50 round;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.gradient-panel {
+    width: min(88vw, 360px);
+    padding: 24px 20px;
+    text-align: center;
+    background: url("../img/gradient.png") center/cover;
+    border: 10px solid transparent;
+    border-image: url("../img/border.png") 50;
     border-radius: 16px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
