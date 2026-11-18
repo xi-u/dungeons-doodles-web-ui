@@ -32,8 +32,11 @@ const selectedClass = computed(() => props.catalog.classes.find(option => option
 const selectedRace = computed(() => props.catalog.races.find(option => option.name === raceName.value));
 const stats = computed(() => characterStats(selectedClass.value, selectedRace.value, props.catalog));
 
+// Submit the character customization form by preparing the portrait and emitting the submit event
 async function submitPortrait(png) {
-  if (preparingPortrait.value || props.sending || !props.connected) return;
+  if (preparingPortrait.value || props.sending || !props.connected) {
+    return;
+  }
   const character = {
     className: className.value, raceName: raceName.value, gender: gender.value,
     pronouns: pronouns.value,
@@ -77,9 +80,20 @@ async function submitPortrait(png) {
   flex: none;
   margin: 0 auto;
 }
-.book { width: 100%; padding: 18px; }
+
+.book {
+  width: 100%;
+  padding: 18px;
+}
+
 @media (max-width: 650px) {
-  .customization { display: flex; flex-direction: column; }
-  .book { padding: 14px 10px; }
+  .customization {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .book {
+    padding: 14px 10px;
+  }
 }
 </style>

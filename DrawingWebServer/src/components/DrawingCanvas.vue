@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, watch } from "vue";
+import {onMounted, ref, watch} from "vue";
 
 // This is the drawing canvas component. It allows the user to draw on a canvas using a brush or eraser tool.
 
@@ -16,12 +16,72 @@ const props = defineProps({
 });
 
 // Define the events that this component can emit to the parent component (DrawingView)
-const emit = defineEmits(["submit", "change"]);
+const emit = defineEmits(["submit", "change", "history-change"]);
 
 // Define refs for the canvas element, its 2D rendering context, and a flag to track whether the user is currently drawing
 const canvasRef = ref(null);
 const contextRef = ref(null);
 const drawing = ref(false);
+const history = [];
+let historyIndex = -1;
+const maxHistoryLength = 50;
+
+// Emit the current history state (canUndo and canRedo) to the parent component (DrawingView)
+function emitHistoryState() {
+  emit("history-change", {
+    canUndo: historyIndex > 0,
+    canRedo: historyIndex < history.length - 1,
+  });
+}
+
+// Save the current canvas state to the history array and update the history index
+function saveHistorySnapshot() {
+  const canvas = canvasRef.value;
+  const context = contextRef.value;
+  if (!canvas || !context) {
+    return;
+  }
+
+  history.splice(historyIndex + 1);
+  history.push(context.getImageData(0, 0, canvas.width, canvas.height));
+  if (history.length > maxHistoryLength) {
+    history.shift();
+  }
+  historyIndex = history.length - 1;
+  emitHistoryState();
+}
+
+// Restore the canvas state from the history array based on the current history index
+function restoreHistorySnapshot() {
+  const context = contextRef.value;
+  if (!context || historyIndex < 0) {
+    return;
+  }
+
+  context.putImageData(history[historyIndex], 0, 0);
+  emitHistoryState();
+  if (canvasRef.value) emit("change", canvasRef.value.toDataURL("image/png"));
+}
+
+// Undo the last drawing action by restoring the previous canvas state from the history array
+function undo() {
+  if (historyIndex <= 0) {
+    return;
+  }
+
+  historyIndex -= 1;
+  restoreHistorySnapshot();
+}
+
+// Redo the last undone drawing action by restoring the next canvas state from the history array
+function redo() {
+  if (historyIndex >= history.length - 1) {
+    return;
+  }
+
+  historyIndex += 1;
+  restoreHistorySnapshot();
+}
 
 // Set the canvas style based on the current tool and brush size
 function setCanvasStyle() {
@@ -51,6 +111,7 @@ function resetCanvas() {
   context.restore();
   context.globalCompositeOperation = "source-over";
   context.strokeStyle = "#000000";
+  saveHistorySnapshot();
   emit("change", canvas.toDataURL("image/png"));
 }
 
@@ -105,8 +166,12 @@ function handlePointerMove(event) {
 
 // Handle the pointer up event
 function handlePointerUp() {
+  const didDraw = drawing.value;
   drawing.value = false;
-  if (canvasRef.value) emit("change", canvasRef.value.toDataURL("image/png"));
+  if (didDraw && canvasRef.value) {
+    saveHistorySnapshot();
+    emit("change", canvasRef.value.toDataURL("image/png"));
+  }
 }
 
 // Submit the drawing by emitting the submit event with the canvas data URL
@@ -122,7 +187,7 @@ function submitDrawing() {
 // Finally, when the component is mounted, set up the canvas and its context, and reset the canvas
 onMounted(() => {
   const canvas = canvasRef.value;
-  const context = canvas.getContext("2d", { alpha: true });
+  const context = canvas.getContext("2d", {alpha: true});
 
   contextRef.value = context;
   context.lineCap = "round";
@@ -139,20 +204,22 @@ watch(() => props.brushSize, () => setCanvasStyle());
 defineExpose({
   resetCanvas,
   submitDrawing,
+  undo,
+  redo,
 });
 </script>
 
 <template>
   <div class="canvas-border">
     <canvas
-      id="canvas"
-      ref="canvasRef"
-      width="200"
-      height="200"
-      @pointerdown="handlePointerDown"
-      @pointermove="handlePointerMove"
-      @pointerup="handlePointerUp"
-      @pointercancel="handlePointerUp"
+        id="canvas"
+        ref="canvasRef"
+        width="200"
+        height="200"
+        @pointerdown="handlePointerDown"
+        @pointermove="handlePointerMove"
+        @pointerup="handlePointerUp"
+        @pointercancel="handlePointerUp"
     ></canvas>
   </div>
 </template>
@@ -167,9 +234,6 @@ defineExpose({
 
 #canvas {
   display: block;
-  /* Square, and small enough on a short screen that the toolbar and the send button still fit (the page can't scroll) */
-  width: min(88vw, 360px, 100dvh - 380px);
-  height: min(88vw, 360px, 100dvh - 380px);
   background: url("../assets/img/old-paper.jpg") center/cover no-repeat;
   touch-action: none;
 }
