@@ -18,6 +18,8 @@ const emit = defineEmits(["submit"]);
 
 // Define a ref for the DrawingCanvas component to access its methods
 const drawingCanvasRef = ref(null);
+const canUndo = ref(false);
+const canRedo = ref(false);
 
 const { tool, brushSize, showClearDialog, updateTool, openClearDialog, closeClearDialog } = useDrawingTools();
 
@@ -34,6 +36,11 @@ function handleToolChange(value) {
 // Handle brush size change event from the BrushToolbar component
 function handleBrushSizeChange(value) {
   brushSize.value = value;
+}
+
+function handleHistoryChange(state) {
+  canUndo.value = state.canUndo;
+  canRedo.value = state.canRedo;
 }
 
 // Handle confirm event from the ClearCanvasDialog component
@@ -53,14 +60,19 @@ function handleClearDialogConfirm() {
     <BrushToolbar
       :tool="tool"
       :brush-size="brushSize"
+      :can-undo="canUndo"
+      :can-redo="canRedo"
       @tool-change="handleToolChange"
       @clear="openClearDialog()"
-      @brush-size-change="handleBrushSizeChange"/>
+      @brush-size-change="handleBrushSizeChange"
+      @undo="drawingCanvasRef?.undo()"
+      @redo="drawingCanvasRef?.redo()"/>
 
     <DrawingCanvas
       ref="drawingCanvasRef"
       :tool="tool"
       :brush-size="brushSize"
+      @history-change="handleHistoryChange"
       @submit="(png) => emit('submit', png)"/>
 
     <div class="buttons">
