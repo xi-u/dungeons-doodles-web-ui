@@ -20,7 +20,7 @@ function submit() {
   <form class="paper-panel" @submit.prevent="submit">
     <h2>Join the adventure</h2>
     <p><label for="player-name">What's your name?</label></p>
-    <input id="player-name" v-model="name" maxlength="20" autocomplete="nickname" required />
+    <input id="player-name" v-model="name" maxlength="12" autocomplete="nickname" required />
     <button class="game-button" type="submit">JOIN</button>
   </form>
 </template>
