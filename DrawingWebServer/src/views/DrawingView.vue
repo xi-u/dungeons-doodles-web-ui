@@ -87,6 +87,11 @@ function handleClearDialogConfirm() {
 </template>
 
 <style scoped>
+.drawing :deep(#canvas) {
+  width: min(95vw, 720px);
+  height: min(95vw, 720px);
+}
+
 .drawing {
   display: flex;
   flex-direction: column;
