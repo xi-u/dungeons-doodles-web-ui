@@ -19,7 +19,9 @@ const SLOT_COLORS = ["#B3261E", "#1F5FA8", "#A67C00", "#2E7D32"];
 const isDrawingVote = computed(() => props.images.some(Boolean));
 
 const headerText = computed(() => {
-  if (props.picked !== -1) return "Waiting for the others…";
+  if (props.picked !== -1) {
+    return "Tap another option to change your vote";
+  }
   return isDrawingVote.value ? "Pick your favourite!" : "Pick a number from the big screen!";
 });
 </script>
@@ -36,7 +38,7 @@ const headerText = computed(() => {
           :class="[isDrawingVote ? 'drawing-option' : 'number-option', { picked: slot === props.picked }]"
           :style="isDrawingVote ? null : { '--slot-color': SLOT_COLORS[slot % SLOT_COLORS.length] }"
           :aria-label="isDrawingVote ? null : `${slot + 1}: ${option}`"
-          :disabled="props.picked !== -1 || slot === props.ownSlot"
+          :disabled="slot === props.ownSlot"
           @click="emit('vote', slot)">
         <template v-if="isDrawingVote">
           <img v-if="props.images[slot]" :src="`data:image/png;base64,${props.images[slot]}`" :alt="option" />

@@ -226,13 +226,17 @@ export function useGameSession() {
     }
 
     function vote(slot) {
-        // One vote per round. The host checks this too
-        if (picked.value !== -1) return;
+        if (picked.value === slot) {
+            return;
+        }
 
+        const previousPicked = picked.value;
         picked.value = slot;
         socket.emit("vote:submit", { slot }, result => {
             if (!result.ok) {
-                picked.value = -1;
+                if (picked.value === slot) {
+                    picked.value = previousPicked;
+                }
                 alertText.value = result.error;
             }
         });
