@@ -160,6 +160,7 @@ export function useGameSession() {
         options.value = data.options;
         images.value = data.images ?? [];
         picked.value = -1;
+        startCountdown(Number(data.seconds) || 0);
         show("voting", "Pick your favourite");
     });
 

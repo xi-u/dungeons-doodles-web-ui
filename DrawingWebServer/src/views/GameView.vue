@@ -50,6 +50,7 @@ const {
         :images="images"
         :picked="picked"
         :own-slot="ownSlot"
+        :seconds-left="secondsLeft"
         @vote="vote"/>
     <section v-if="screen === 'result'" class="paper-panel">
       <h2>The winner!</h2>
