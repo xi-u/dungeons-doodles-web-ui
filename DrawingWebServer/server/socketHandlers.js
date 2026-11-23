@@ -27,6 +27,11 @@ export function registerSocketHandlers(io, sessionStore) {
         for (const { event, data, endsAt } of [...session.replay, ...player.replay]) {
             if (event === "drawing:open") {
                 socket.emit(event, { seconds: Math.max(0, Math.round((endsAt - Date.now()) / 1000)) });
+            } else if (event === "vote:open") {
+                socket.emit(event, {
+                    ...data,
+                    seconds: Math.max(0, Math.round((endsAt - Date.now()) / 1000))
+                });
             } else {
                 socket.emit(event, data);
             }
@@ -308,10 +313,15 @@ export function registerSocketHandlers(io, sessionStore) {
             const message = {
                 options: data.options,
                 // Fase 2: the drawing in each slot as base64 PNG, or null for a text option
-                images: Array.isArray(data.images) ? data.images : []
+                images: Array.isArray(data.images) ? data.images : [],
+                seconds: Math.max(0, Number(data.seconds) || 0)
             };
             // A new round: a phone that comes back gets this vote
-            session.replay = [{ event: "vote:open", data: message }];
+            session.replay = [{
+                event: "vote:open",
+                data: message,
+                endsAt: Date.now() + message.seconds * 1000
+            }];
             forgetPlayerReplays(session);
             io.to(playersRoom(socket.data.gameSessionId)).emit("vote:open", message);
         });

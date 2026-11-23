@@ -9,6 +9,7 @@ const props = defineProps({
   images: { type: Array, default: () => [] },
   picked: { type: Number, default: -1 },
   ownSlot: { type: Number, default: -1 },
+  secondsLeft: { type: Number, default: 0 },
 });
 
 const emit = defineEmits(["vote"]);
@@ -28,6 +29,7 @@ const headerText = computed(() => {
 
 <template>
   <section class="vote-list">
+    <p class="timer" aria-live="polite">Time left: {{ props.secondsLeft }}</p>
     <p class="header">{{ headerText }}</p>
 
     <div class="options">
@@ -62,6 +64,12 @@ const headerText = computed(() => {
 .header {
   font-size: 1.2rem;
   text-align: center;
+}
+
+.timer {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-size: 1.5rem;
 }
 
 .options {

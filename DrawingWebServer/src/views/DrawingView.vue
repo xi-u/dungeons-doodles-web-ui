@@ -100,7 +100,7 @@ function handleClearDialogConfirm() {
 }
 
 .header {
-  font-size: 1.2rem;
+  font-size: 1.5rem;
   text-align: center;
   margin-bottom: 26px;
 }
