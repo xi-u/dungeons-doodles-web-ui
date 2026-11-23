@@ -29,7 +29,7 @@ const headerText = computed(() => {
 
 <template>
   <section class="vote-list">
-    <p class="timer" aria-live="polite">Time left: {{ props.secondsLeft }}</p>
+    <p class="timer" aria-live="polite">{{ props.secondsLeft }}</p>
     <p class="header">{{ headerText }}</p>
 
     <div class="options">
