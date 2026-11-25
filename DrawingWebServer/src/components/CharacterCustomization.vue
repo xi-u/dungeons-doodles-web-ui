@@ -5,6 +5,7 @@ import CharacterRace from "./CharacterRace.vue";
 import CharacterGender from "./CharacterGender.vue";
 import CharacterPortrait from "./CharacterPortrait.vue";
 import CharacterProfile from "./CharacterProfile.vue";
+import CharacterStatsDialog from "./CharacterStatsDialog.vue";
 import {characterStats} from "./customizationStats";
 import {exportPortraitWithPaper} from "./portraitExport";
 
@@ -27,6 +28,7 @@ const portrait = ref("");
 const preparingPortrait = ref(false);
 const portraitError = ref("");
 const portraitComponent = ref(null);
+const showStatsInfo = ref(false);
 
 const selectedClass = computed(() => props.catalog.classes.find(option => option.name === className.value));
 const selectedRace = computed(() => props.catalog.races.find(option => option.name === raceName.value));
@@ -58,6 +60,8 @@ async function submitPortrait(png) {
 <template>
   <form class="customization" @submit.prevent="portraitComponent?.submitDrawing()">
     <div class="book gradient-panel">
+      <button class="info-button" type="button" aria-label="About character stats"
+              @click="showStatsInfo = true">?</button>
       <CharacterClass v-model="className" :options="catalog.classes"/>
       <CharacterRace v-model="raceName" :options="catalog.races"/>
       <CharacterGender v-model="gender" v-model:pronouns="pronouns" :options="catalog.genders"/>
@@ -67,6 +71,7 @@ async function submitPortrait(png) {
                       :gender="gender" :pronouns="pronouns" :portrait="portrait" :stats="stats"
                       :portrait-error="portraitError" :sending="sending || preparingPortrait"
                       :connected="connected"/>
+    <CharacterStatsDialog v-if="showStatsInfo" :stats="stats" @close="showStatsInfo = false"/>
   </form>
 </template>
 
@@ -82,8 +87,36 @@ async function submitPortrait(png) {
 }
 
 .book {
+  position: relative;
   width: 100%;
-  padding: 18px;
+  padding: 52px 18px 18px;
+}
+
+.info-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 2px solid #d5a448;
+  border-radius: 50%;
+  color: #fff;
+  background: #291507;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.55);
+  font: bold 1.5rem "Playfair", serif;
+  cursor: pointer;
+}
+
+.info-button:hover {
+  filter: brightness(1.35);
+}
+
+.info-button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
 }
 
 @media (max-width: 650px) {
@@ -93,7 +126,7 @@ async function submitPortrait(png) {
   }
 
   .book {
-    padding: 14px 10px;
+    padding: 48px 10px 14px;
   }
 }
 </style>
