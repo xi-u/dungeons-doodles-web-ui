@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import BrushToolbar from "../components/BrushToolbar.vue";
 import ClearCanvasDialog from "../components/ClearCanvasDialog.vue";
 import DrawingCanvas from "../components/DrawingCanvas.vue";
@@ -25,8 +25,19 @@ const { tool, brushSize, showClearDialog, updateTool, openClearDialog, closeClea
 
 const headerText = computed(() => {
   if (props.secondsLeft === null) return "Let your creativity flow! Draw and send it to the game!";
-  return props.secondsLeft > 0 ? `Draw! ${props.secondsLeft} seconds left` : "Time's up! Send your drawing now";
+  return props.secondsLeft > 0 ? `Draw! ${props.secondsLeft} seconds left` : "Time's up! Sending your drawing…";
 });
+
+// Automatically submit the drawing when the timer reaches zero
+function submitWhenTimeIsUp() {
+  if (props.secondsLeft === 0) {
+    drawingCanvasRef.value?.submitDrawing();
+  }
+}
+
+// Watch for changes in secondsLeft and call submitWhenTimeIsUp when it reaches zero
+watch(() => props.secondsLeft, submitWhenTimeIsUp);
+onMounted(submitWhenTimeIsUp);
 
 // Handle tool change event from the BrushToolbar component
 function handleToolChange(value) {
